@@ -72,7 +72,7 @@ class FileObject(ABC):
         return self._directory
 
     @property
-    def locked(self):
+    def is_locked(self):
         """Returns True if the file is locked, returns False otherwise."""
         return self._locked
 
@@ -88,6 +88,15 @@ class FileObject(ABC):
     def unlock(self):
         """Unlocks the file."""
         self._locked = False
+
+    def _is_unlocked(self, path, action):
+        if self._locked:
+            print("Unable to {action} the FileObject {path} because it is \
+                locked. Execute the 'unlock() method to unlock.".format(
+                    action=action, path=path
+                ))
+            return False
+        return True
 
 # ---------------------------------------------------------------------------- #
 #                                     FILE                                     #   
@@ -111,7 +120,8 @@ class File(FileObject):
 
     def __init__(self, path, name=None):
         super(File, self).__init__(path=path, name=name)
-        self._filename = os.path.basename(path)
+        self._name = name or os.path.splitext(os.path.basename(path))[0]
+        self._filename =  os.path.basename(path)
         self._fileext = os.path.splitext(path)[1]
 
     @property
@@ -124,7 +134,7 @@ class File(FileObject):
         """Returns the file extension."""
         return self._fileext
 
-    def _update_filename_data(path):
+    def _update_filename_data(self, path):
         """Updates the directory, filename, and extension based upon 'path'."""
         self._path = path
         self._directory = os.path.dirname(path)
@@ -161,33 +171,49 @@ class File(FileObject):
         Returns
         ------
         str
-            The path to the new file.
+            The path to the new file if the file is unlocked. Returns None
+            if file is locked.
 
         """
-        new_path = shutil.move(self._path, path)
-        self._update_filename_data(new_path)
-        return new_path
+        if self._is_unlocked(self._path, 'move'):
+            new_path = shutil.move(self._path, path)
+            self._update_filename_data(new_path)
+            return new_path
+        return None
+
 
     def rename(self, name):
         """ Renames a file.
 
+        This method renames the file basename, but not the file extension. 
+
         Parameters
         ----------
         name : str
-            The name and file extension to which the file should be renamed.
+            The name and file to which the file should be renamed.
+
+        Returns
+        ------
+        str
+            The path to the new file if the file is unlocked. Returns None
+            if file is locked.
 
         """
-        new_path = os.path.join(self._directory, name)
-        os.rename(self._path, new_path)
-        self._update_filename_data(new_path)
-        return new_path
+        if self._is_unlocked(self._path, 'rename'):
+            new_path = os.path.splitext(\
+                os.path.join(self._directory, name))[0].replace("\\", "/")\
+                + self._fileext
+            os.rename(self._path, new_path)
+            self._update_filename_data(new_path)
+            return new_path
+        return None
 
     def read(self, columns=None):
         """Reads and returns the file contents.
 
         Parameters
         ----------
-        subset : array like (Optional)
+        columns : array like (Optional)
             Used when reading .csv or .csv.gz files. Specifies specific 
             columns to read.
 
@@ -210,6 +236,7 @@ class File(FileObject):
         io = FileIOFactory()
         return io.read(self._path, columns)
 
+#TODO: Don't write index 
     def write(self, content):
         """Writes content to file.
 
@@ -220,13 +247,14 @@ class File(FileObject):
         ------              ---------
         string              .txt
         DataFrame           .csv
+        DataFrame           .csv.gz
         Numpy Array         .npy
         JSON                .json
 
         """
-
-        io = FileIOFactory()
-        io.write(self._path, content)
+        if self._is_unlocked(self._path, 'write'):
+            io = FileIOFactory()
+            io.write(self._path, content)
 
 # ---------------------------------------------------------------------------- #
 #                                   FILE GROUP                                 #   
@@ -283,6 +311,7 @@ class FileGroup(FileObject):
             print("No object of the name {name} exists in the FileGroup.\
                 ".format(name=name))
 
+#TODO: Add file metadata once decorators are done.
     def print():
         """Prints a list of the FileObjects contained herein."""
         if self._file_objects:
@@ -290,17 +319,11 @@ class FileGroup(FileObject):
             classnames = []
             names = []
             paths = []
-            created = []
-            updated = []
-            sizes = []
 
             for name, file_object in self._file_objects.items():
                 classnames.append(file_object.__class__.__name__)
                 names.append(file_object.name)
                 paths.append(file_object.path)
-                created.append(file_object.created)
-                updated.append(file_object.updated)
-                sizes.append(file_object.size)
             d = {
                 'Class' : classnames,
                 'Name' : names,
@@ -315,37 +338,7 @@ class FileGroup(FileObject):
             print("This FileGroup contains no FileObjects.")
     
 
-    
 
-
-
-# ---------------------------------------------------------------------------- #
-#                                FILEIO FACTORY                                #   
-# ---------------------------------------------------------------------------- #
-class FileIOFactory:
-    """Encapsulates an individual file on disk."""
-    _FILE_HANDLERS = {'.gz': FileCSVgz(), '.csv': FileCSV(), '.npy': FileNumpy()}
-
-    def __init__(self):
-        pass
-        
-    def _get_file_handler(self, path):
-        file_ext = os.path.splitext(path)[1]
-        file_handler = self._FILE_HANDLERS.get(file_ext)
-        if file_handler is None:
-            raise Exception("{ext} files are not supported.".format(ext=file_ext))        
-        else:
-            return file_handler
-
-    def read(self, path, columns=None):
-        """Obtains a file handler based upon the file extension, then reads.""" 
-        file_handler = self._get_file_handler(path)
-        return file_handler.read(path, columns)
-
-    def write(self, path, df):
-        """Obtains a file handler based upon the file extension, then reads.""" 
-        file_handler = self._get_file_handler(path)
-        return file_handler.write(path, df)
 
 # ---------------------------------------------------------------------------- #
 #                                 FILEIO                                       #  
@@ -353,22 +346,19 @@ class FileIOFactory:
 class FileIO:
     """Abstract base class for FileIO subclasses."""
 
-    def __init__(self):
-        pass
-
-    def _check_dir(path):
+    def _check_dir(self, path):
         """Checks existence of a files directory and creates if not exists."""
 
         directory = os.path.dirname(path)
-        if not os.path.exists(path):
+        if not os.path.exists(directory):
             os.mkdir(directory)    
             print("Directory did not exist. \
                 Created {dirname}.".format(dirname=directory))
 
-    def _check_file_ext(path, ext):
+    def _check_file_ext(self, path, ext):
         """Ensures file extension is correct."""
         if not os.path.splitext(path)[1] == ext:
-            new_path = os.path.splitext(path)[0] + ext
+            new_path = path + ext
             print("File extension incompatible with file type.\
                 Saving {oldname} as {newname}.".format(
                     oldname=path, newname=new_path
@@ -380,11 +370,8 @@ class FileIO:
 # ---------------------------------------------------------------------------- #
 #                               FilECSVGZ                                      #  
 # ---------------------------------------------------------------------------- #
-class FileCSVgz:
+class FileIOCSVgz(FileIO):
     """Read and write .gz compressed CSV files into and from DataFrame objects."""
-
-    def __init__(self):
-        pass
 
     def read(self, path, columns=None):
         """Reads a .gz file, designated by 'path' into a DataFrame.
@@ -445,11 +432,8 @@ class FileCSVgz:
 # ---------------------------------------------------------------------------- #
 #                               FileCSV                                        #  
 # ---------------------------------------------------------------------------- #
-class FileCSV:
+class FileIOCSV(FileIO):
     """Read and write CSV files and returning DataFrames."""
-
-    def __init__(self):
-        pass
 
     def read(self, path, columns=None):
         """Reads a .csv file, designated by 'path' into a DataFrame.
@@ -468,7 +452,7 @@ class FileCSV:
         
         """
         try:
-            result = pd.read_csv(path, usecols=columns)
+            result = pd.read_csv(path, usecols=columns, low_memory=False)
         except IOError:
             print("The file, {fname}, does not exist. None returned.".format(fname=path))
             result = None
@@ -508,11 +492,8 @@ class FileCSV:
 # ---------------------------------------------------------------------------- #
 #                               FileNumpy                                      #  
 # ---------------------------------------------------------------------------- #
-class FileNumpy:
+class FileIONumpy(FileIO):
     """Read and write numpy files (.npy, .npz)"""
-
-    def __init__(self):
-        pass
 
     def read(self, path, columns=None):
         """Reads a .npy or .npz file, designated by 'path' into a numpy object.
@@ -546,14 +527,14 @@ class FileNumpy:
         return result
 
     def write(self, path, content):
-        """Writes a numpy array, or a dictionary containing, to path.
+        """Writes a numpy array to path.
         
         Parameters
         ----------
         path : str
             The relative or fully qualified file path
-        content : numpy array or array like thereof
-            A numpy array or a dictionary containing numpy arrays.
+        content : numpy array
+            The numpy array to be saved.
 
         Returns
         -------
@@ -564,18 +545,39 @@ class FileNumpy:
         """
         
         self._check_dir(path)        
-        if isinstance(content, (np.ndarray, np.generic)):
-            path = self._check_file_ext(path, '.npy')
-            try:                
-                np.save(path, content)
-            except Exception as e:
-                print(e)
-                path = None
-        else:
-            path = self._check_file_ext(path, '.npz')
-            try:
-                np.savez(path, content)
-            except Exception as e:
-                print(e)
-                path = None        
+        path = self._check_file_ext(path, '.npy')
+        try:                
+            np.save(path, content)
+        except Exception as e:
+            print(e)
+            path = None
         return path
+
+# ---------------------------------------------------------------------------- #
+#                                FILEIO FACTORY                                #   
+# ---------------------------------------------------------------------------- #
+class FileIOFactory:
+    """Encapsulates an individual file on disk."""
+    _FILE_HANDLERS = {'.gz': FileIOCSVgz(), '.csv': FileIOCSV(),
+                      '.npy': FileIONumpy()}
+
+    def __init__(self):
+        pass
+        
+    def _get_file_handler(self, path):
+        file_ext = os.path.splitext(path)[1]
+        file_handler = self._FILE_HANDLERS.get(file_ext)
+        if file_handler is None:
+            raise Exception("{ext} files are not supported.".format(ext=file_ext))        
+        else:
+            return file_handler
+
+    def read(self, path, columns=None):
+        """Obtains a file handler based upon the file extension, then reads.""" 
+        file_handler = self._get_file_handler(path)
+        return file_handler.read(path, columns)
+
+    def write(self, path, df):
+        """Obtains a file handler based upon the file extension, then reads.""" 
+        file_handler = self._get_file_handler(path)
+        return file_handler.write(path, df)
