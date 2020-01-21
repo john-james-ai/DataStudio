@@ -208,14 +208,13 @@ class File(FileObject):
             return new_path
         return None
 
-    def read(self, columns=None):
+    def read(self, filter=None):
         """Reads and returns the file contents.
 
         Parameters
         ----------
-        columns : array like (Optional)
-            Used when reading .csv or .csv.gz files. Specifies specific 
-            columns to read.
+        filter : array like (Optional)
+            Specifies specific columns to read.
 
         Returns
         -------
@@ -234,9 +233,8 @@ class File(FileObject):
 
         """
         io = FileIOFactory()
-        return io.read(self._path, columns)
+        return io.read(self._path, filter)
 
-#TODO: Don't write index 
     def write(self, content):
         """Writes content to file.
 
@@ -341,7 +339,7 @@ class FileGroup(FileObject):
 
 
 # ---------------------------------------------------------------------------- #
-#                                 FILEIO                                       #  
+#                                 FileIO                                       #  
 # ---------------------------------------------------------------------------- #
 class FileIO:
     """Abstract base class for FileIO subclasses."""
@@ -368,20 +366,20 @@ class FileIO:
         
 #         
 # ---------------------------------------------------------------------------- #
-#                               FilECSVGZ                                      #  
+#                               FilEIOCSVgz                                    #  
 # ---------------------------------------------------------------------------- #
 class FileIOCSVgz(FileIO):
     """Read and write .gz compressed CSV files into and from DataFrame objects."""
 
-    def read(self, path, columns=None):
+    def read(self, path, filter=None):
         """Reads a .gz file, designated by 'path' into a DataFrame.
         
         Parameters
         ----------
         path : str
             The relative or fully qualified file path
-        columns : list
-            A list of column names to return
+        filter : list
+            A list of the column names to include in the result. 
 
         Returns
         -------
@@ -392,7 +390,7 @@ class FileIOCSVgz(FileIO):
         
         try:
             result = pd.read_csv(path, compression='gzip', error_bad_lines=False,
-                        low_memory=False, usecols=columns)
+                        low_memory=False, usecols=filter)
         except IOError:
             print("The file, {fname}, does not exist. None returned.".format(fname=path))
             result = None
@@ -422,7 +420,7 @@ class FileIOCSVgz(FileIO):
         self._check_dir(path)
         path = self._check_file_ext(path, '.gz')
         try:
-            content.to_csv(path, compression='gzip')
+            content.to_csv(path, compression='gzip', index=False)
         except Exception as e:
             print(e)
             path = None
@@ -430,20 +428,20 @@ class FileIOCSVgz(FileIO):
         return path
         
 # ---------------------------------------------------------------------------- #
-#                               FileCSV                                        #  
+#                               FileIOCSV                                      #  
 # ---------------------------------------------------------------------------- #
 class FileIOCSV(FileIO):
     """Read and write CSV files and returning DataFrames."""
 
-    def read(self, path, columns=None):
+    def read(self, path, filter=None):
         """Reads a .csv file, designated by 'path' into a DataFrame.
         
         Parameters
         ----------
         path : str
             The relative or fully qualified file path
-        columns : list
-            A list of column names to return
+        filter : list
+            A list of column names to return in the result
 
         Returns
         -------
@@ -452,7 +450,7 @@ class FileIOCSV(FileIO):
         
         """
         try:
-            result = pd.read_csv(path, usecols=columns, low_memory=False)
+            result = pd.read_csv(path, usecols=filter, low_memory=False)
         except IOError:
             print("The file, {fname}, does not exist. None returned.".format(fname=path))
             result = None
@@ -482,7 +480,7 @@ class FileIOCSV(FileIO):
         self._check_dir(path)
         path = self._check_file_ext(path, '.csv')
         try:
-            content.to_csv(path)
+            content.to_csv(path, index=False)
         except Exception as e:
             print(e)
             path = None
@@ -490,34 +488,30 @@ class FileIOCSV(FileIO):
         
 
 # ---------------------------------------------------------------------------- #
-#                               FileNumpy                                      #  
+#                               FileIOTXT                                      #  
 # ---------------------------------------------------------------------------- #
-class FileIONumpy(FileIO):
-    """Read and write numpy files (.npy, .npz)"""
+class FileIOTXT(FileIO):
+    """Read and write TXT files, returning strings."""
 
-    def read(self, path, columns=None):
-        """Reads a .npy or .npz file, designated by 'path' into a numpy object.
-
-        For .npy files, a numpy array is returned. For .npz files, a dictionary
-        is returned containing the filename as key and a numpy array as 
-        the value, for each file in the archive.
+    def read(self, path, filter=None):
+        """Reads a .txt file, designated by 'path' into a DataFrame.
         
         Parameters
         ----------
         path : str
             The relative or fully qualified file path
-        columns : array-like
-            Not used
+        filter : list
+            The number of bytes to read
 
         Returns
         -------
-        numpy array / dict
-            Numpy array for .npy files. Dictionary for .npz files. Returns 
-                None if unable to read the file.
+        string : The file contents in string format. Returns None if 
+                    unable to read the file.
         
         """
         try:
-            result = np.load(path)
+            f = open(path, 'r')
+            result = f.read(filter)
         except IOError:
             print("The file, {fname}, does not exist. None returned.".format(fname=path))
             result = None
@@ -527,39 +521,50 @@ class FileIONumpy(FileIO):
         return result
 
     def write(self, path, content):
-        """Writes a numpy array to path.
+        """Accepts a filename and a DataFrame and writes it to a .csv file.
         
         Parameters
         ----------
         path : str
             The relative or fully qualified file path
-        content : numpy array
-            The numpy array to be saved.
+        content : string or list of strings
+            For string content, write will places the string on a single line
+            in the text file. For a list of strings, writelines is used to
+            place each string on a separate line. Note: When writing a
+            list of strings, they are not saved as a list, but as strings
+            of text separated by '\n'. Therefore, the read method will not
+            return a list but a continuous string with '\n' separating each
+            list element. 
 
         Returns
         -------
         str
             If successful, the method returns the path to which the file was
             written.  If unsuccessful, None is returned.
-        
+
         """
-        
-        self._check_dir(path)        
-        path = self._check_file_ext(path, '.npy')
-        try:                
-            np.save(path, content)
+
+        self._check_dir(path)
+        path = self._check_file_ext(path, '.txt')
+        try:
+            f = open(path, 'w')
+            if isinstance(content, str):                
+                f.write(content)
+            else:
+                for string in content:
+                    f.writelines(string)
         except Exception as e:
             print(e)
             path = None
         return path
+
 
 # ---------------------------------------------------------------------------- #
 #                                FILEIO FACTORY                                #   
 # ---------------------------------------------------------------------------- #
 class FileIOFactory:
     """Encapsulates an individual file on disk."""
-    _FILE_HANDLERS = {'.gz': FileIOCSVgz(), '.csv': FileIOCSV(),
-                      '.npy': FileIONumpy()}
+    _FILE_HANDLERS = {'.gz': FileIOCSVgz(), '.csv': FileIOCSV()}
 
     def __init__(self):
         pass
@@ -572,10 +577,10 @@ class FileIOFactory:
         else:
             return file_handler
 
-    def read(self, path, columns=None):
+    def read(self, path, filter=None):
         """Obtains a file handler based upon the file extension, then reads.""" 
         file_handler = self._get_file_handler(path)
-        return file_handler.read(path, columns)
+        return file_handler.read(path, filter)
 
     def write(self, path, df):
         """Obtains a file handler based upon the file extension, then reads.""" 

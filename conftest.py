@@ -32,6 +32,17 @@ def get_numpy_arrays():
     e = np.array([a,b,c,d])
     return a, b, c, d, e
 
+@fixture(scope='session')
+def get_text():
+    t1 = """Contrary to popular belief, Lorem Ipsum is not simply random.\n"""
+    t2 = """Lorem ipsum dolor sit amet.\n"""
+    t3 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam 
+    vitae diam id ipsum lacinia congue eget sed nisi. Nam eget.\n"""
+    tl = [t1, t2, t3]
+    return t1, tl
+
+
+
 
 
 

@@ -32,31 +32,22 @@ from datastudio.base.file import *
 class FileIOTests:
 
     @mark.fileio
-    def test_file_io_numpy_array_write(self, get_numpy_arrays):     
-        # Clean up data
-        shutil.rmtree("./tests/test_data/test_file/")  
-        # Test with correct extension
-        a,b,c,d,e = get_numpy_arrays
-        path = "./tests/test_data/test_file/numpy_array_a.npy"
-        f = FileIONumpy()
-        f.write(path, content=a)
-        assert os.path.exists(path), "Numpy file not created"
-        # Test without correct extension
-        path = "./tests/test_data/test_file/numpy_array_b.txt"
-        newpath = path + '.npy'
-        f.write(path, content=b)
-        assert not os.path.exists(path), "File with incorrect extension saved"
-        assert os.path.exists(newpath), "File with correct extension not saved"
-        
-    @mark.fileio
-    def test_file_io_numpy_array_read(self, get_numpy_arrays):        
-        # Test .npy
-        a,b,c,d,e = get_numpy_arrays
-        path = "./tests/test_data/test_file/numpy_array_a.npy"
-        f = FileIONumpy()
-        a_test = f.read(path)
-        assert np.array_equal(a,a_test), "Numpy array read failed. Not equal to original"
-
+    def test_file_txt(self, get_text):
+        path_string = "./tests/test_data/test_file/text_string.txt"
+        path_list = "./tests/test_data/test_file/text_list.txt"
+        t1, tl = get_text
+        f = FileIOTXT()
+        # Test strings
+        f.write(path_string, t1)
+        assert os.path.exists(path_string), "Didn't create txt file from string"
+        # Read and confirm all on one line
+        t1_read = f.read(path_string)
+        assert t1 == t1_read, "Text read not same as text written"
+        # Test list of strings
+        f.write(path_list, tl)
+        assert os.path.exists(path_list), "Didn't create txt file from string list."
+        tl_read = f.read(path_list)
+        assert sum([len(t) for t in tl]) == len(tl_read), "Text list read not same as text list written"
 
     @mark.fileio
     def test_file_io_csv(self):             
@@ -133,7 +124,7 @@ class FileTests:
         assert not os.path.exists(pathfrom), "File Test: move - Locked file moved."
         # Put the file back
         f.unlock()
-        f.move(pathfrom)
+        f.copy(pathfrom)
         assert os.path.exists(pathfrom), "File Test: move - Unlocked file not moved."
 
   
@@ -157,14 +148,14 @@ class FileTests:
 
     @mark.file
     def test_file_csv(self):
-        path =  "./tests/test_data/san_francisco.csv"
+        path =  "./tests/test_data/test_file/san_francisco.csv"
         f = File(path)
         # Read entire file
         df1 = f.read()
         assert isinstance(df1, pd.DataFrame), "Dataframe not returned."
         assert df1.shape[1] > 60, "Not all columns returned"
         # Read two columns
-        df2 = f.read(columns=['id', 'bathrooms'])
+        df2 = f.read(filter=['id', 'bathrooms'])
         assert isinstance(df2, pd.DataFrame), "Dataframe not returned."
         assert df2.shape[1] == 2, "Number of columns not correct."
         # Write csv
@@ -177,17 +168,20 @@ class FileTests:
         df2 = f.read()
         assert isinstance(df2, pd.DataFrame), "Dataframe not returned."
         assert df2.shape[1] == 2, "Number of columns not correct."
+        # Place original file 
+        path2 = "./tests/test_data/san_francisco.csv"
+        shutil.copy2(path2, path)        
 
     @mark.file
     def test_file_csv_gz(self):
-        path =  "./tests/test_data/san_francisco.csv.gz"
+        path =  "./tests/test_data/test_file/san_francisco.csv.gz"
         f = File(path)
         # Read entire file
         df1 = f.read()
         assert isinstance(df1, pd.DataFrame), "Dataframe not returned."
         assert df1.shape[1] > 60, "Not all columns returned"
         # Read two columns
-        df2 = f.read(columns=['id', 'bathrooms'])
+        df2 = f.read(filter=['id', 'bathrooms'])
         assert isinstance(df2, pd.DataFrame), "Dataframe not returned."
         assert df2.shape[1] == 2, "Number of columns not correct."
         # Write csv
@@ -200,19 +194,7 @@ class FileTests:
         df2 = f.read()
         assert isinstance(df2, pd.DataFrame), "Dataframe not returned."
         assert df2.shape[1] == 2, "Number of columns not correct."
-
-    @mark.file
-    def test_file_numpy(self, get_numpy_arrays):
-        path =  "./tests/test_data/test_file/numpy_array_a.npy"
-        a,b,c,d,e = get_numpy_arrays
-        f = File(path)
-        # Read numpy array
-        a_read = f.read()
-        assert isinstance(a_read, (np.generic, np.ndarray)), "Numpy array not returned."
-        assert np.array_equal(a,a_read), "Array read does not equal array written" 
-        f.write(b)
-        b_read = f.read()
-        assert isinstance(b_read, (np.generic, np.ndarray)), "Numpy array not returned."
-        assert np.array_equal(b,b_read), "Array read does not equal array written" 
+        path2 = "./tests/test_data/san_francisco.csv.gz"
+        shutil.copy2(path2, path)    
 
 
