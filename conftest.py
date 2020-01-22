@@ -23,6 +23,8 @@ import os
 import numpy as np
 from pytest import fixture
 
+from .datastudio.base.file import File
+
 @fixture(scope="session")
 def get_numpy_arrays():
     a = np.arange(0,100)
@@ -40,6 +42,10 @@ def get_text():
     vitae diam id ipsum lacinia congue eget sed nisi. Nam eget.\n"""
     tl = [t1, t2, t3]
     return t1, tl
+
+
+
+
 
 
 

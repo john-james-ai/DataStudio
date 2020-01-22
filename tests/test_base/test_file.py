@@ -197,4 +197,3 @@ class FileTests:
         path2 = "./tests/test_data/san_francisco.csv.gz"
         shutil.copy2(path2, path)    
 
-

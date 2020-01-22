@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # =========================================================================== #
-# Project : MetaData Studio                                                   #
+# Project : Data Studio                                                       #
 # Version : 0.1.0                                                             #
-# File    : file_object.py                                                    #
+# File    : file.py                                                           #
 # Python  : 3.8.1                                                             #
 # --------------------------------------------------------------------------- #
 # Author  : John James                                                        #
@@ -11,7 +11,7 @@
 # Email   : jjames@decisionscients.com                                        #
 # --------------------------------------------------------------------------- #
 # Created       : Monday, January 20th 2020, 12:52:03 pm                      #
-# Last Modified : Monday, January 20th 2020, 12:52:03 pm                      #
+# Last Modified : Tuesday, January 21st 2020, 7:14:39 pm                      #
 # Modified By   : John James (jjames@decisionscients.com>)                    #
 # --------------------------------------------------------------------------- #
 # License : BSD                                                               #
@@ -26,15 +26,14 @@ Two categories of classes encapsulate file capabilities.
 
 The FileObject classes include:
     
-    * FileObject: The abstract base class for all FileObject subclasses.
+    * FileObject: The interface for the File class.
     * File : Concrete class that encapsulates a single file on disk.
-    * FileGroup : A collection of FileGroup or File objects.
 
 The FileIO family of classes include:
 
-    * FileCSV : File handler for CSV files
-    * FileJSON : Flle handler for JSON files
-    * FileCSVGZ : File handler for .GZ compressed files
+    * FileIOCSV : File handler for CSV files    
+    * FileIOCSVGZ : File handler for .GZ compressed files
+    * FileIOTXT : File handler for txt files
     * FileIOFactory : Returns a file hander based upon file extension.
     
     * other FileIO classes to be added as needed.
@@ -253,89 +252,6 @@ class File(FileObject):
         if self._is_unlocked(self._path, 'write'):
             io = FileIOFactory()
             io.write(self._path, content)
-
-# ---------------------------------------------------------------------------- #
-#                                   FILE GROUP                                 #   
-# ---------------------------------------------------------------------------- #
-class FileGroup(FileObject):
-    """Collection of File and FileGroup objects.
-    
-    Note
-    ----
-    File and FileGroup objects are stored as dictionaries. No two 
-    objects may have the same name. 
-    """
-
-    def __init__(self, path, name=None):
-        super(File, self).__init__(path=path, name=name)
-        self._file_objects = {}
-
-    def get(name):
-        """Gets the FileObject designated by 'name'.
-        
-        Parameters
-        ----------
-        name : str
-            The name of the FileObject to obtain
-        """
-        try:
-            result = self._file_objects[name]
-        except KeyError:
-            print("No object of the name {name} exists in the FileGroup.\
-                ".format(name=name))
-
-    def add(file_object):
-        """Adds a File or FileGroup
-
-        Parameters
-        ----------
-        file_object : File or FileGroup
-            The object to be added to the FileGroup object.
-        
-        """
-
-        name = file_object.name
-        try:
-            self._file_objects[name] = file_object
-        except KeyError:
-            print("An object with the same name, {name}, already exists in the \
-                FileGroup.".format(name=name))
-
-    def remove(name):
-        """Removes a FileObject designated by 'name' from the FileGroup."""
-        try:
-            del self._file_objects[name]
-        except KeyError:
-            print("No object of the name {name} exists in the FileGroup.\
-                ".format(name=name))
-
-#TODO: Add file metadata once decorators are done.
-    def print():
-        """Prints a list of the FileObjects contained herein."""
-        if self._file_objects:
-            d = {}
-            classnames = []
-            names = []
-            paths = []
-
-            for name, file_object in self._file_objects.items():
-                classnames.append(file_object.__class__.__name__)
-                names.append(file_object.name)
-                paths.append(file_object.path)
-            d = {
-                'Class' : classnames,
-                'Name' : names,
-                'Path' : paths,
-                'Created' : created,
-                'Last Updated' : updated,
-                'Size' : sizes
-            }
-            df = pd.DataFrame(d)
-            print(tabulate(df))
-        else:
-            print("This FileGroup contains no FileObjects.")
-    
-
 
 
 # ---------------------------------------------------------------------------- #
