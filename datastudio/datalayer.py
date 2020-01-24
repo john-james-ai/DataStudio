@@ -20,6 +20,7 @@
 """Module encapsulating all PostgreSQL data operations."""
 from abc import ABC, abstractmethod
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -35,18 +36,11 @@ class DataLayer(ABC):
     """Abstract base layer for DataLayer objects."""
 
     def __init__(self, name):
-        self._name = name                 # Name for new database or table.
-        self._server_connection = None    # Connection to PostgreSQL database
-        self._db_connection=None          # Connection to new named database
+        # Name for database to be created
+        self._name = name                
         
-        # Instantiate logger
-        self._log = logging.getLogger()
-        self._log.setLevel(logging.INFO)
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self._log.addHandler(handler)
+        # Configure Logger
+        self._log = logging.getLogger(__name__)    
 
         # Obtain PostgreSQL credentials.
         with open(CREDENTIALS_FILENAME) as f:
@@ -114,33 +108,17 @@ class Database(DataLayer):
         return engine
          
     def get_server_connection(self):
-        self._server_connection = self._connect(self._pg_dbname).raw_connection()      
-        return self._server_connection  
+        return self._connect(self._pg_dbname).raw_connection()              
 
     def get_db_connection(self):
-        self._db_connection = self._connect(self._name).raw_connection()
-        return self._db_connection
+        return self._connect(self._name).raw_connection()        
 
-    def close_connection(self, connection):
-        """Closes connection."""
-        self._log.info("Closing PostgreSQL connection.")
-        if (connection):
-            connection.close()
-            self._log.info("PostgreSQL connection is closed.")
-
-    def close_cursor(self, cursor):
-        """Closes cursor."""
-        self._log.info("Closing PostgreSQL cursor.")
-        if (cursor):
-            cursor.close()
-            self._log.info("PostgreSQL cursor is closed.")
-
-    def _terminate_connections(self, name):
+    def _terminate_connections(self, name, cursor):
         """Terminates active connections to databases."""
         # Assumes connection and cursor to server. 
         self._log.info("Terminating active connections.")
         try:
-            self._cursor.execute(\
+            cursor.execute(\
                 "SELECT pg_terminate_backend(pg_stat_activity.pid)\
                     FROM pg_stat_activity \
                         WHERE pg_stat_activity.datname = %s;", (name,))
@@ -155,31 +133,32 @@ class Database(DataLayer):
         """Creates a PostgreSQL database."""
         # Connect to PostgreSQL DBMS
         self._log.info("Creating {name} database.".format(name=self._name))
-        _ = self.get_server_connection()
-        self._server_connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)  
-        self._cursor = self._server_connection.cursor()
+        connection = self.get_server_connection()
+        connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)  
+        cursor = connection.cursor()
         try:
-            self._cursor.execute(sql.SQL("CREATE DATABASE {}").format(
+            cursor.execute(sql.SQL("CREATE DATABASE {}").format(
                         sql.Identifier(self._name)))
             # Print PostgreSQL Database version
-            self._cursor.execute('SELECT version()')
-            db_version = self._cursor.fetchone()
-            self._log.infor(db_version)                    
+            cursor.execute('SELECT version()')
+            db_version = cursor.fetchone()
+            self._log.info(db_version)                    
         except (Exception, psycopg2.Error) as error:
             self._log.info("Error creating databases {db}. {error}".format(
                         db=self._name, error = error))
         finally:
-            self.close_connection(self._server_connection)            
-            self.close_cursor(self._cursor)
+            connection.close()            
+            cursor.close()
             
 
     def drop_db(self):
         """Drops the PostgreSQL database."""
-        _ = self.get_server_connection()
-        self._cursor = self._server_connection.cursor()
-        self._terminate_connections(self._name)
+        connection = self.get_server_connection()
+        connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)  
+        cursor = connection.cursor()
+        self._terminate_connections(self._name, cursor)
         try:
-            self._cursor.execute(sql.SQL("drop database if exists {}").format(
+            cursor.execute(sql.SQL("drop database if exists {}").format(
                 sql.Identifier(self._name)))
             self._log.info("Successfully dropped {name} database.".format(
                 name=self._name))
@@ -187,8 +166,8 @@ class Database(DataLayer):
             self._log.info("Error dropping the {name} database. {error}".format(
                 name=self._name, error=error))
         finally:
-            self.close_connection(self._server_connection)
-            self.close_cursor(self._cursor)
+            connection.close()
+            cursor.close()
 
     def get(self, name):
         """Retrieves a member Database or DataTable object.
