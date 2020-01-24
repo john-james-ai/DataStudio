@@ -73,6 +73,7 @@ class Database(DataLayer):
 
     def _connect(self, name):
         """Creates a connection to PostgreSQL server."""
+        print("Connecting to {name}...\n".format(name=name))
         try:
             connection = psycopg2.connect(user = self._userid,
                                           password = self._pwd,
@@ -97,18 +98,38 @@ class Database(DataLayer):
 
     def _close_connection(self, connection):
         """Closes connection."""
+        print("Closing PostgreSQL connection.")
         if (connection):
             connection.close()
             print("PostgreSQL connection is closed.")
 
     def _close_cursor(self, cursor):
+        """Closes cursor."""
+        print("Closing PostgreSQL cursor.")
         if (cursor):
             cursor.close()
             print("PostgreSQL cursor is closed.")
 
+    def _terminate_connections(self, name):
+        """Terminates active connections to databases."""
+        # Assumes connection and cursor to server. 
+        print("Terminating active connections.")
+        try:
+            self._cursor.execute(\
+                "SELECT pg_terminate_backend(pg_stat_activity.pid)\
+                    FROM pg_stat_activity \
+                        WHERE pg_stat_activity.datname = %s;", (name,))
+            print("Active connections on {name} terminated.".format(
+                name=name
+            ))
+        except (Exception, psycopg2.Error) as error:
+            print("Error terminating active connections. {error}"\
+                .format(error=error))
+
     def create(self):
         """Creates a PostgreSQL database."""
         # Connect to PostgreSQL DBMS
+        print("Creating {name} database.".format(name=self._name))
         self._get_server_connection()
         self._cursor = self._server_connection.cursor()
         try:
@@ -130,6 +151,7 @@ class Database(DataLayer):
         """Drops the PostgreSQL database."""
         self._get_server_connection()
         self._cursor = self._server_connection.cursor()
+        self._terminate_connections(self._name)
         try:
             self._cursor.execute(sql.SQL("drop database if exists {}").format(
                 sql.Identifier(self._name)))

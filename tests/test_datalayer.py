@@ -29,5 +29,10 @@ class DatabaseTests:
     @mark.database
     def test_database_create(self):
         db = Database(name='TestDB')
-        db.create()
+        db.create()     
+
+    @mark.datalayer
+    @mark.database
+    def test_database_drop(self):
+        db = Database(name='TestDB')        
         db.drop_db()
