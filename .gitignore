@@ -6,9 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
-# Additional folders added but hidden from version control
+# Additional files folders added but hidden from version control
 notes/
 tests/test_data/
+credentials.py
 
 # Distribution / packaging
 .Python

@@ -18,6 +18,7 @@
 # Copyright (c) 2020 DecisionScients                                          #
 # =========================================================================== #
 """MetaData Factory and Classes and Decorators for Various Types of MetaData."""
+import os
 from abc import ABC, abstractmethod
 import time
 import uuid
