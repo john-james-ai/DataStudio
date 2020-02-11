@@ -1,0 +1,50 @@
+2020-01-24 12:04:59,940 - DataStudio - INFO - Creating TestDB database.
+2020-01-24 12:04:59,976 - DataStudio - INFO - Connected to postgres database!
+2020-01-24 12:05:06,635 - DataStudio - INFO - ('PostgreSQL 12.1, compiled by Visual C++ build 1914, 64-bit',)
+2020-01-24 12:05:06,644 - DataStudio - INFO - Connected to postgres database!
+2020-01-24 12:05:06,644 - DataStudio - INFO - Connected to postgres database!
+2020-01-24 12:05:06,726 - DataStudio - INFO - Terminating active connections.
+2020-01-24 12:05:06,726 - DataStudio - INFO - Terminating active connections.
+2020-01-24 12:05:06,733 - DataStudio - INFO - Active connections on TestDB terminated.
+2020-01-24 12:05:06,733 - DataStudio - INFO - Active connections on TestDB terminated.
+2020-01-24 12:05:07,061 - DataStudio - INFO - Successfully dropped TestDB database.
+2020-01-24 12:05:07,061 - DataStudio - INFO - Successfully dropped TestDB database.
+2020-01-24 12:20:16,104 - datastudio - INFO - Logger configuration complete!
+2020-01-24 12:20:17,288 - datastudio.datalayer - INFO - Creating TestDB database.
+2020-01-24 12:20:17,324 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 12:20:23,239 - datastudio.datalayer - INFO - ('PostgreSQL 12.1, compiled by Visual C++ build 1914, 64-bit',)
+2020-01-24 12:20:23,247 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 12:20:23,329 - datastudio.datalayer - INFO - Terminating active connections.
+2020-01-24 12:20:23,335 - datastudio.datalayer - INFO - Active connections on TestDB terminated.
+2020-01-24 12:20:23,640 - datastudio.datalayer - INFO - Successfully dropped TestDB database.
+2020-01-24 13:26:24,424 - datastudio - INFO - Logger configuration complete!
+2020-01-24 13:26:25,617 - datastudio.datalayer - INFO - Creating TestDB database.
+2020-01-24 13:26:25,652 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 13:26:31,455 - datastudio.datalayer - INFO - ('PostgreSQL 12.1, compiled by Visual C++ build 1914, 64-bit',)
+2020-01-24 13:26:31,465 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 13:26:31,528 - datastudio.datalayer - INFO - Terminating active connections.
+2020-01-24 13:26:31,532 - datastudio.datalayer - INFO - Active connections on TestDB terminated.
+2020-01-24 13:26:31,805 - datastudio.datalayer - INFO - Successfully dropped TestDB database.
+2020-01-24 14:00:41,147 - datastudio - INFO - Logger configuration complete!
+2020-01-24 14:03:33,640 - datastudio - INFO - Logger configuration complete!
+2020-01-24 17:52:05,261 - datastudio - INFO - Logger configuration complete!
+2020-01-24 17:52:24,743 - datastudio - INFO - Logger configuration complete!
+2020-01-24 17:53:02,494 - datastudio - INFO - Logger configuration complete!
+2020-01-24 17:53:03,760 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 17:54:04,411 - datastudio - INFO - Logger configuration complete!
+2020-01-24 17:54:06,872 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 18:14:39,559 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:14:42,028 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 18:30:16,712 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:31:24,739 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:33:13,097 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:33:27,811 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:33:31,981 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 18:34:35,778 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:34:39,899 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 18:35:23,153 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:35:27,274 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 18:36:46,742 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:36:50,937 - datastudio.datalayer - INFO - Connected to postgres database!
+2020-01-24 18:47:36,341 - datastudio - INFO - Logger configuration complete!
+2020-01-24 18:47:40,454 - datastudio.datalayer - INFO - Connected to postgres database!

@@ -63,8 +63,9 @@ class FileIOTests:
         
     @mark.fileio
     def test_file_io_csv_gsv(self):             
-        pathin = "./tests/test_data/san_francisco.csv.gz"
-        pathout = "./tests/test_data/test_file/san_francisco.csv.gz"
+        pathin = "./tests/test_data/nashville.csv.gz"
+        pathout = "./tests/test_data/test_file/nashville.csv.gz"
+        pathout2 = "./tests/test_data/test_file/nashville.csv"
         if os.path.exists(pathout):
             os.remove(pathout)
         f = FileIOCSVgz()        
@@ -72,6 +73,9 @@ class FileIOTests:
         assert isinstance(df, pd.DataFrame), "FileIOCSVgz didn't return a dataframe"        
         f.write(pathout, content=df)
         assert os.path.exists(pathout), "FileIOCSVgz didn't write file."        
+        # Write nashville file to test_file directory as csv
+        f = FileIOCSV()
+        f.write(pathout2, content=df)
 
 class FileTests:
 

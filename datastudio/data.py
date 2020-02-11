@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # =========================================================================== #
-# Project : DataStudio                                                        #
+# Project : Data Studio                                                       #
 # Version : 0.1.0                                                             #
-# File    : data_object.py                                                    #
+# File    : data.py                                                           #
 # Python  : 3.8.1                                                             #
 # --------------------------------------------------------------------------- #
 # Author  : John James                                                        #
@@ -11,7 +11,7 @@
 # Email   : jjames@decisionscients.com                                        #
 # --------------------------------------------------------------------------- #
 # Created       : Saturday, January 18th 2020, 4:04:31 pm                     #
-# Last Modified : Saturday, January 18th 2020, 4:04:31 pm                     #
+# Last Modified : Tuesday, February 11th 2020, 4:42:25 pm                     #
 # Modified By   : John James (jjames@decisionscients.com>)                    #
 # --------------------------------------------------------------------------- #
 # License : BSD                                                               #
