@@ -3,7 +3,7 @@
 # =========================================================================== #
 # Project : Data Studio                                                       #
 # Version : 0.1.0                                                             #
-# File    : data.py                                                           #
+# File    : entity.py                                                         #
 # Python  : 3.8.1                                                             #
 # --------------------------------------------------------------------------- #
 # Author  : John James                                                        #
@@ -11,15 +11,14 @@
 # Email   : jjames@decisionscients.com                                        #
 # URL     : https://github.com/decisionscients/datastudio                     #
 # --------------------------------------------------------------------------- #
-# Created       : Friday, February 14th 2020, 4:18:37 am                      #
-# Last Modified : Friday, February 14th 2020, 4:56:10 am                      #
+# Created       : Friday, February 14th 2020, 8:22:33 am                      #
+# Last Modified : Friday, February 14th 2020, 8:39:26 am                      #
 # Modified By   : John James (jjames@decisionscients.com>)                    #
 # --------------------------------------------------------------------------- #
 # License : BSD                                                               #
 # Copyright (c) 2020 DecisionScients                                          #
 # =========================================================================== #
-#TODO: Derive from Entity class.
-""" Object wrapper that encapsulates a dataset and its metadata."""
+""" Module encapsulates objects and behaviors common among groups of classes."""
 from abc import ABC, abstractmethod
 import os
 from datetime import datetime
@@ -30,14 +29,20 @@ import platform
 import time
 import uuid
 
-from ...utils.format import scale_number
-
 # --------------------------------------------------------------------------- #
 #                              Entity                                         #
 # --------------------------------------------------------------------------- #
 class Entity(ABC):
     """Abstract base class for all Entity related classes.
     
+    The Entity class is a composite comprised of the following classes:
+
+        - MetaData - Classes for the creation and management of administrative, 
+            descriptive, and technical metadata.
+        - Project - A Project object which specifies attributes common
+            to all classes within a project.
+        - Logger - Object for tracking access and update operations 
+         
     Encapsulates and standardizes methods to create and manage five  
     categories of metadata:
         - Administrative - Date and time created, modified and by whom

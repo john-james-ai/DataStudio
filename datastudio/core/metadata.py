@@ -3,7 +3,7 @@
 # =========================================================================== #
 # Project : Data Studio                                                       #
 # Version : 0.1.0                                                             #
-# File    : data.py                                                           #
+# File    : metadata.py                                                       #
 # Python  : 3.8.1                                                             #
 # --------------------------------------------------------------------------- #
 # Author  : John James                                                        #
@@ -11,33 +11,49 @@
 # Email   : jjames@decisionscients.com                                        #
 # URL     : https://github.com/decisionscients/datastudio                     #
 # --------------------------------------------------------------------------- #
-# Created       : Friday, February 14th 2020, 4:18:37 am                      #
-# Last Modified : Friday, February 14th 2020, 4:56:10 am                      #
+# Created       : Friday, February 14th 2020, 8:47:19 am                      #
+# Last Modified : Friday, February 14th 2020, 8:47:29 am                      #
 # Modified By   : John James (jjames@decisionscients.com>)                    #
 # --------------------------------------------------------------------------- #
 # License : BSD                                                               #
 # Copyright (c) 2020 DecisionScients                                          #
 # =========================================================================== #
-#TODO: Derive from Entity class.
-""" Object wrapper that encapsulates a dataset and its metadata."""
+""" Management of administrative, descriptive and technical metadata.
+
+This module encapsulates the creation, management, and reporting of 
+administrative, descriptive, and technical metadata common to all entity
+related classes. The classes include:
+
+    - MetaDataBase : Abstract base class from which all metadata classes derive. 
+    - MetaData : Collection of administrative, technical and descriptive
+        metadata subclasses for a specific Entity subclass.
+    - MetaDataAdmin : Administrative metadata
+    - MetaDataDescriptive : Descriptive metadata
+    - MetaDataTechnical : Technical metadata
+"""
 from abc import ABC, abstractmethod
 import os
 from datetime import datetime
-import pandas as pd
-from pkg_resources import get_distribution
 import psutil
 import platform
 import time
 import uuid
 
-from ...utils.format import scale_number
-
 # --------------------------------------------------------------------------- #
-#                              Entity                                         #
+#                              MetaDataBase                                   #
 # --------------------------------------------------------------------------- #
-class Entity(ABC):
-    """Abstract base class for all Entity related classes.
+class MetaDataBase(ABC):
+    """Abstract base class from which all MetaData* classes are derived.
     
+    Defines the interface common among MetaData* classes. Operations include:
+        - 
+
+        - MetaData - Classes for the creation and management of administrative, 
+            descriptive, and technical metadata.
+        - Project - A Project object which specifies attributes common
+            to all classes within a project.
+        - Logger - Object for tracking access and update operations 
+         
     Encapsulates and standardizes methods to create and manage five  
     categories of metadata:
         - Administrative - Date and time created, modified and by whom
