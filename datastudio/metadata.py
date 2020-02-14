@@ -35,8 +35,6 @@ class MetaData(ABC):
         self._created = time.ctime(os.path.getctime(__file__))
         self._modifier = os.getlogin()
         self._modified = time.ctime(os.path.getmtime(__file__))
-        self._updates = 0
-        self._instance = instance
         self._class = instance.__class__.__name__
                 
         
