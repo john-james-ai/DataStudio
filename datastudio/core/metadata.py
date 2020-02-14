@@ -22,7 +22,7 @@
 
 This module encapsulates the creation, management, and reporting of 
 administrative, descriptive, and technical metadata common to all entity
-related classes. The classes include:
+related classes. The classes in this module are:
 
     - MetaDataBase : Abstract base class from which all metadata classes derive. 
     - MetaData : Collection of administrative, technical and descriptive
@@ -43,29 +43,9 @@ import uuid
 #                              MetaDataBase                                   #
 # --------------------------------------------------------------------------- #
 class MetaDataBase(ABC):
-    """Abstract base class from which all MetaData* classes are derived.
-    
-    Defines the interface common among MetaData* classes. Operations include:
-        - 
+    """Abstract base class from which all MetaData* classes are derived."""
 
-        - MetaData - Classes for the creation and management of administrative, 
-            descriptive, and technical metadata.
-        - Project - A Project object which specifies attributes common
-            to all classes within a project.
-        - Logger - Object for tracking access and update operations 
-         
-    Encapsulates and standardizes methods to create and manage five  
-    categories of metadata:
-        - Administrative - Date and time created, modified and by whom
-        - Descriptive - Data used for the purposes of discovery and 
-            identification       
-        - Technical - Hardware, software environment, object size and format.
-        - Persistence - Data serialization and filename information.
-        - log - Access and update operations performed on the data. 
-
-        """
-
-    def __init__(self, name, project = None, version = '0.1.0', keywords = []):
+    def __init__(self, entity):
 
         # Store project object
         self._project = project 
