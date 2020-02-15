@@ -28,7 +28,6 @@ related classes. The classes in this module are:
     - MetaDataAdmin : Administrative metadata.    
     - MetaDataDesc : Descriptive metadata
     - MetaDataTech : Technical metadata
-    - MetaDataPersist : Object persistence metadata
 """
 from abc import ABC, abstractmethod
 import os
@@ -47,10 +46,9 @@ class MetaDataBase(ABC):
     def __init__(self, entity):
         self._entity = entity
         self._metadata = {}
-        self.is_composite = False
     
     def get_metadata(self):
-        return self._metadata
+        return self._metadata.copy()
 
     def update_metadata(self):
         pass
@@ -68,17 +66,15 @@ class MetaDataAdmin(MetaDataBase):
     def __init__(self, entity):
         super(MetaDataAdmin, self).__init__(entity)
 
-        self._metadata = {}
-
         self._metadata['id'] = uuid.uuid4()                
         self._metadata['creator'] = os.getlogin()
-        self._metadata['created'] = time.ctime(os.path.getctime(__file__))
+        self._metadata['created'] = time.strftime("%c")
         self._metadata['modifier'] = os.getlogin()
-        self._metadata['modified'] = time.mtime(os.path.getmtime(__file__))        
+        self._metadata['modified'] = time.strftime("%c")
 
     def update_metadata(self):
         self._metadata['modifier'] = os.getlogin()
-        self._metadata['modified'] = time.mtime(os.path.getmtime(__file__))                
+        self._metadata['modified'] = time.strftime("%c")
 
     # TODO: Create print method
     def print(self):
@@ -93,14 +89,12 @@ class MetaDataDesc(MetaDataBase):
 
     def __init__(self, entity, name):
         super(MetaDataDesc, self).__init__(entity)
-        self.is_composite = False
 
         self._metadata['name'] = name
         self._metadata['description'] = ""
         self._metadata['class'] = entity.__class__.__name__
         self._metadata['version'] = "0.1.0"
-        self._metadata['keywords'] = [name, entity.__class__.__name__]
-
+        
     #TODO: 
     def print(self):
         pass
@@ -130,15 +124,6 @@ class MetaDataDesc(MetaDataBase):
     def version(self, value):
         self._metadata['version'] = value
 
-    @property
-    def keywords(self):
-        return self._metadata['keywords']
-    
-    def add_keyword(self, value):
-        self._metadata['keyword'].append(value)
-
-    def remove_keyword(self, value):
-        self._metadata['keyword'].remove(value)
 
 
 # --------------------------------------------------------------------------- #
@@ -176,31 +161,4 @@ class MetaDataTech(MetaDataBase):
         pass
 
 
-# --------------------------------------------------------------------------- #
-#                              MetaDataPersistence                            #
-# --------------------------------------------------------------------------- #
-class MetaDataPersist(MetaDataBase):
-    """ Storage and management of persistence metadata."""
-
-    def __init__(self, entity):
-        super(MetaDataPersist, self).__init__(entity)
-
-        self.update_metadata()
-
-    def update_metadata(self):
-        if self._entity.project:
-            self._metadata['filename'] = self._entity.project.name + \
-                self._entity.project.location + \
-                self._entity.project.taskname + \
-                self._entity.project.member + self._entity.__class__.__name__ + \
-                self._entity.name  + \
-                    time.mtime(os.path.getmtime(__file__)) + '.P'
-        else:
-            self._metadata['filename'] = self._entity.__class__.__name__ + \
-                self._entity.name  + \
-                    time.mtime(os.path.getmtime(__file__)) + '.P'
-
-    # TODO: Create print method
-    def print(self):
-        pass
 

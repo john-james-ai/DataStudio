@@ -27,7 +27,7 @@ import pytest
 from pytest import mark
 
 
-from datastudio.file import *
+from datastudio.core.file import *
 
 class FileIOTests:
 

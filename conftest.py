@@ -23,7 +23,7 @@ import os
 import numpy as np
 from pytest import fixture
 
-from datastudio.file import File
+from datastudio.core.file import File
 USECOLS = ["id", "host_id",
             "host_response_rate",
             "host_total_listings_count",

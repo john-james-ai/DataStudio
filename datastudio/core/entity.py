@@ -23,7 +23,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from datastudio.core.metadata import MetaDataAdmin, MetaDataDesc
-from datastudio.core.metadata import MetaDataTech, MetaDataPersist
+from datastudio.core.metadata import MetaDataTech
 
 # --------------------------------------------------------------------------- #
 #                              Entity                                         #
@@ -42,18 +42,39 @@ class Entity(ABC):
     behaviors such as metadata creation and management and logging. 
     """
 
-    def __init__(self, name):
+    def __init__(self, name):        
+        self._metadata = {}
         self._create_metadata(name)
         logging.info('Class instantiation.')
 
 
     def _create_metadata(self, name):
         """Factory method that creates metadata objects."""
-        self._metadata_admin = MetaDataAdmin(self)
-        self._metadata_desc = MetaDataDesc(self, name)
-        self._metadata_tech = MetaDataTech(self)
-        self._metadata_persist = MetaDataPersist(self)
-        
+        self._metadata['admin'] = MetaDataAdmin(self)
+        self._metadata['desc'] = MetaDataDesc(self, name)
+        self._metadata['tech'] = MetaDataTech(self)
+
+
+    def get_metadata(self):
+        """Obtain all metadata and return a dictionary."""        
+        metadata = {}
+        for k, v in self._metadata.items():
+            metadata[k] = v.get_metadata()
+        return metadata
+
+    def update_metadata(self):
+        """Update all metadata.""" 
+        for k, v in self._metadata.items():
+            v.update_metadata()   
+            self._metadata[k] = v
+        return self
+
+    def print_metadata(self):
+        """Print all metadata."""
+        for _, v in self._metadata.items():
+            v.print()
+        return self
+
     # Administrative metadata management
     def get_metadata_admin(self):
         """ Obtain administrative metadata."""
@@ -110,18 +131,6 @@ class Entity(ABC):
         self._metadata_desc.version = value
         return self
 
-    @property
-    def keywords(self):
-        return self._metadata_desc.keywords
-    
-    def add_keyword(self, value):
-        self._metadata_desc.keywords.append(value)
-        return self
-
-    def remove_keyword(self, value):
-        self._metadata_desc.keywords.remove(value)
-        return self
-
     # Technical metadata management
     def get_metadata_admin(self):
         """ Obtain technical metadata."""
@@ -135,17 +144,3 @@ class Entity(ABC):
         """ Prints technical metadata."""
         self._metadata_tech.print()        
         return self        
-
-    # Technical metadata management
-    def get_metadata_persist(self):
-        """ Obtain technical metadata."""
-        return self._metadata_persist.get_metadata()
-
-    def update_metadata_persist(self):
-        """ Update technical metadata."""
-        return self._metadata_persist.update_metadata()
-
-    def print_metadata_persist(self):
-        """ Prints technical metadata."""
-        self._metadata_persist.print()        
-        return self          
