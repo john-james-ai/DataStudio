@@ -25,11 +25,10 @@ administrative, descriptive, and technical metadata common to all entity
 related classes. The classes in this module are:
 
     - MetaDataBase : Abstract base class from which all metadata classes derive. 
-    - MetaData : Collection of administrative, technical and descriptive
-        metadata subclasses for a specific Entity subclass.
-    - MetaDataTech : Techistrative metadata
-    - MetaDataDescriptive : Descriptive metadata
-    - MetaDataTechnical : Technical metadata
+    - MetaDataAdmin : Administrative metadata.    
+    - MetaDataDesc : Descriptive metadata
+    - MetaDataTech : Technical metadata
+    - MetaDataPersist : Object persistence metadata
 """
 from abc import ABC, abstractmethod
 import os
@@ -53,14 +52,7 @@ class MetaDataBase(ABC):
     def get_metadata(self):
         return self._metadata
 
-    def add_metadata(self, metadata):
-        pass
-
     def update_metadata(self):
-        pass
-
-    @abstractmethod
-    def remove_metadata(self, metadata):
         pass
 
     @abstractmethod
@@ -68,40 +60,13 @@ class MetaDataBase(ABC):
         pass
 
 # --------------------------------------------------------------------------- #
-#                              MetaData                                       #
+#                              MetaDataAdmin                                  #
 # --------------------------------------------------------------------------- #
-class MetaData(MetaDataBase):
-    """Composite class containing the metadata subclasses."""
-
-    def __init__(self, entity):
-        super(MetaData, self).__init__(entity)
-        self.is_composite = True
-
-    def get_metadata(self):
-        return self._metadata
-
-    def add_metadata(self, metadata):
-        self._metadata[metadata.__class__.__name__] = metadata
-
-    def update_metadata(self):
-        for k, v in self._metadata.items():
-            v.update_metadata()        
-
-    def remove_metadata(self, metadata):
-        del self._metadata[metadata.__class__.__name__] 
-
-    def print(self):
-        for k, v in self._metadata.items():
-            v.print()
-
-# --------------------------------------------------------------------------- #
-#                              MetaDataTech                                  #
-# --------------------------------------------------------------------------- #
-class MetaDataTech(MetaDataBase):
+class MetaDataAdmin(MetaDataBase):
     """ Storage and management of administrative metadata."""
 
     def __init__(self, entity):
-        super(MetaDataTech, self).__init__(entity)
+        super(MetaDataAdmin, self).__init__(entity)
 
         self._metadata = {}
 
@@ -114,9 +79,6 @@ class MetaDataTech(MetaDataBase):
     def update_metadata(self):
         self._metadata['modifier'] = os.getlogin()
         self._metadata['modified'] = time.mtime(os.path.getmtime(__file__))                
-
-    def remove_metadata(self):
-        self._metadata = {}
 
     # TODO: Create print method
     def print(self):
@@ -139,12 +101,6 @@ class MetaDataDesc(MetaDataBase):
         self._metadata['version'] = "0.1.0"
         self._metadata['keywords'] = [name, entity.__class__.__name__]
 
-    def update_metadata(self):
-        pass
-
-    def remove_metadata(self):
-        self._metadata = {}
-
     #TODO: 
     def print(self):
         pass
@@ -156,6 +112,7 @@ class MetaDataDesc(MetaDataBase):
     @name.setter
     def name(self, value):
         self._metadata['name'] = value
+        return self
 
     @property
     def description(self):
@@ -188,7 +145,7 @@ class MetaDataDesc(MetaDataBase):
 #                              MetaDataTech                                   #
 # --------------------------------------------------------------------------- #
 class MetaDataTech(MetaDataBase):
-    """ Storage and management of administrative metadata."""
+    """ Storage and management of technical metadata."""
 
     def __init__(self, entity):
         super(MetaDataTech, self).__init__(entity)
@@ -212,10 +169,7 @@ class MetaDataTech(MetaDataBase):
         self._metadata['total_memory'] = scale_number(svmem.total)
         self._metadata['available_memory'] = scale_number(svmem.available)
         self._metadata['used_memory'] = scale_number(svmem.used)
-        self._metadata['pct_memory_used'] = svmem.percent
-        
-    def remove_metadata(self):
-        self._metadata = {}
+        self._metadata['pct_memory_used'] = svmem.percent        
 
     # TODO: Create print method
     def print(self):
@@ -225,11 +179,11 @@ class MetaDataTech(MetaDataBase):
 # --------------------------------------------------------------------------- #
 #                              MetaDataPersistence                            #
 # --------------------------------------------------------------------------- #
-class MetaDataPersistence(MetaDataBase):
+class MetaDataPersist(MetaDataBase):
     """ Storage and management of persistence metadata."""
 
     def __init__(self, entity):
-        super(MetaDataPersistence, self).__init__(entity)
+        super(MetaDataPersist, self).__init__(entity)
 
         self.update_metadata()
 
@@ -245,9 +199,6 @@ class MetaDataPersistence(MetaDataBase):
             self._metadata['filename'] = self._entity.__class__.__name__ + \
                 self._entity.name  + \
                     time.mtime(os.path.getmtime(__file__)) + '.P'
-
-    def remove_metadata(self, metadata):
-        self._metadata = {}
 
     # TODO: Create print method
     def print(self):
