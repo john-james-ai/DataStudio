@@ -19,89 +19,28 @@
 # =========================================================================== #
 """File module includes classes for reading, writing and manipulating files.
 
-Two categories of classes encapsulate file capabilities.
+There types of classes are included in this module.
 
-    * FileObject : Object representations of files and groups of files.
-    * FileIO : Factory and handlers for file i/o.
-
-The FileObject classes include:
-    
-    * FileObject: The interface for the File class.
     * File : Concrete class that encapsulates a single file on disk.
-
-The FileIO family of classes include:
-
+    * FileIO : Abstract base class for file input and output.
     * FileIOCSV : File handler for CSV files    
-    * FileIOCSVGZ : File handler for .GZ compressed files
-    * FileIOTXT : File handler for txt files
-    * FileIOFactory : Returns a file hander based upon file extension.
+    * FileIOCSVGZ : File handler for .GZ compressed files    
+    * FileIOStrategy : Returns a file hander based upon file extension.
     
-    * other FileIO classes to be added as needed.
+File types which support tabular data have been prioritized. Support for
+additional file formats will be added to future releases if and
+when needed.
 """
 from abc import ABC, abstractmethod
 import os
 import shutil
-
-import numpy as np
 import pandas as pd
-
-class FileObject(ABC):
-    """Abstract base class for FileObject subclasses."""
-
-    def __init__(self, path, name=None):
-        self._name = name or os.path.basename(path)
-        self._path = path
-        self._directory = os.path.dirname(path)
-        self._locked = False
-        self._exists = os.path.exists(path)
-
-    @property
-    def name(self):
-        """Returns the name of the FileObject."""
-        return self._name
-
-    @property
-    def path(self):
-        """Returns the path to the file."""
-        return self._path
-
-    @property
-    def directory(self):
-        """Returns the directory for the file."""
-        return self._directory
-
-    @property
-    def is_locked(self):
-        """Returns True if the file is locked, returns False otherwise."""
-        return self._locked
-
-    @property
-    def exists(self):
-        """Returns True if the file exists, returns False otherwise."""
-        return self._exists
-
-    def lock(self):
-        """Locks the file, preventing any updates or writes to the file."""
-        self._locked = True
-    
-    def unlock(self):
-        """Unlocks the file."""
-        self._locked = False
-
-    def _is_unlocked(self, path, action):
-        if self._locked:
-            print("Unable to {action} the FileObject {path} because it is \
-                locked. Execute the 'unlock() method to unlock.".format(
-                    action=action, path=path
-                ))
-            return False
-        return True
 
 # ---------------------------------------------------------------------------- #
 #                                     FILE                                     #   
 # ---------------------------------------------------------------------------- #
-class File(FileObject):
-    """Encapsulates content and behaviors of individual files on disk.
+class File:
+    """ Encapsulates information and behaviors of files. 
 
     File class includes the location and obtains appropriate file I/O handlers
     for reading and writing the files. Methods are exposed to move, copy
@@ -118,10 +57,23 @@ class File(FileObject):
     """
 
     def __init__(self, path, name=None):
-        super(File, self).__init__(path=path, name=name)
         self._name = name or os.path.splitext(os.path.basename(path))[0]
+        self._path = path
+        self._directory = os.path.dirname(path)
+        self._locked = False
+        self._exists = os.path.exists(path)    
         self._filename =  os.path.basename(path)
         self._fileext = os.path.splitext(path)[1]
+
+    @property
+    def name(self):
+        """Returns the name of the FileObject."""
+        return self._name
+
+    @property
+    def path(self):
+        """Returns the path to the file."""
+        return self._path
 
     @property
     def filename(self):
@@ -129,9 +81,28 @@ class File(FileObject):
         return self._filename
 
     @property
+    def directory(self):
+        """Returns the directory for the file."""
+        return self._directory
+
+    @property
     def file_ext(self):
         """Returns the file extension."""
         return self._fileext
+
+    @property
+    def exists(self):
+        """Returns True if the file exists, returns False otherwise."""
+        return self._exists
+
+    @property
+    def is_locked(self):
+        """Returns True if the file is locked, returns False otherwise."""
+        return self._locked
+
+    def lock(self):
+        """Locks the file, preventing any updates or writes to the file."""
+        self._locked = True        
 
     def _update_filename_data(self, path):
         """Updates the directory, filename, and extension based upon 'path'."""
@@ -231,7 +202,7 @@ class File(FileObject):
             Support for additional formats will be added as needed.
 
         """
-        io = FileIOFactory()
+        io = FileIOStrategy()
         return io.read(self._path, filter)
 
     def write(self, content):
@@ -250,7 +221,7 @@ class File(FileObject):
 
         """
         if self._is_unlocked(self._path, 'write'):
-            io = FileIOFactory()
+            io = FileIOStrategy()
             io.write(self._path, content)
 
 
@@ -260,6 +231,15 @@ class File(FileObject):
 class FileIO:
     """Abstract base class for FileIO subclasses."""
 
+    @abstractmethod
+    def read(self, path, filter=None):
+        pass
+
+    @abstractmethod
+    def write(self, path, content):
+        pass
+
+    
     def _check_dir(self, path):
         """Checks existence of a files directory and creates if not exists."""
 
@@ -476,9 +456,9 @@ class FileIOTXT(FileIO):
 
 
 # ---------------------------------------------------------------------------- #
-#                                FILEIO FACTORY                                #   
+#                                FILEIO STRATEGY                               #   
 # ---------------------------------------------------------------------------- #
-class FileIOFactory:
+class FileIOStrategy:
     """Encapsulates an individual file on disk."""
     _FILE_HANDLERS = {'.gz': FileIOCSVgz(), '.csv': FileIOCSV()}
 

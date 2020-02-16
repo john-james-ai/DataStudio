@@ -28,6 +28,7 @@ import time
 from datastudio.core.metadata import MetaDataAdmin, MetaDataDesc
 from datastudio.core.metadata import MetaDataTech
 class MetaDataTests:
+  
 
     @mark.metadata
     def test_metadata_admin(self):

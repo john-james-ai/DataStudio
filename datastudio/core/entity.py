@@ -41,11 +41,12 @@ class Entity(ABC):
     The Entity class encapsulates primarily administrative information and
     behaviors such as metadata creation and management and logging. 
     """
-
+    
     def __init__(self, name):        
         self._metadata = {}
         self._create_metadata(name)
-        logging.info('Class instantiation.')
+        self._logger = logging.getLogger(__name__)
+        self._logger.info('Class instantiation.')
 
 
     def _create_metadata(self, name):
@@ -65,7 +66,7 @@ class Entity(ABC):
     def update_metadata(self):
         """Update all metadata.""" 
         for k, v in self._metadata.items():
-            v.update_metadata()  
+            v.update_metadata()          
         return self
 
     def print_metadata(self):
@@ -110,8 +111,11 @@ class Entity(ABC):
         return self._metadata['desc'].name
 
     @name.setter
-    def name(self, value):
+    def name(self, value):        
+        old = self._metadata['desc'].name
         self._metadata['desc'].name = value
+        msg = "Changed object version from '" + old + "' to '" + value + "'"
+        self._logger.info(msg)        
         return self
 
     @property
@@ -120,7 +124,10 @@ class Entity(ABC):
 
     @description.setter
     def description(self, value):
+        old = self._metadata['desc'].description
         self._metadata['desc'].description = value
+        msg = "Changed object version from '" + old + "' to '" + value + "'"
+        self._logger.info(msg)                
         return self
 
     @property
@@ -129,7 +136,10 @@ class Entity(ABC):
 
     @version.setter
     def version(self, value):
+        old = self._metadata['desc'].version
         self._metadata['desc'].version = value
+        msg = "Changed object version from '" + old + "' to '" + value + "'"
+        self._logger.info(msg)                
         return self
 
     # Technical metadata management
@@ -146,3 +156,4 @@ class Entity(ABC):
         """ Prints technical metadata."""
         self._metadata['tech'].print()        
         return self        
+

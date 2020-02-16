@@ -12,7 +12,7 @@
 # URL     : https://github.com/decisionscients/datastudio                     #
 # --------------------------------------------------------------------------- #
 # Created       : Friday, February 14th 2020, 8:47:19 am                      #
-# Last Modified : Friday, February 14th 2020, 8:47:29 am                      #
+# Last Modified : Sunday, February 16th 2020, 7:04:22 am                      #
 # Modified By   : John James (jjames@decisionscients.com>)                    #
 # --------------------------------------------------------------------------- #
 # License : BSD                                                               #
@@ -22,8 +22,9 @@
 
 This module encapsulates the creation, management, and reporting of 
 administrative, descriptive, and technical metadata common to all entity
-related classes. The classes in this module are:
+related classes. 
 
+The classes in this module are:
     - MetaDataBase : Abstract base class from which all metadata classes derive. 
     - MetaDataAdmin : Administrative metadata.    
     - MetaDataDesc : Descriptive metadata
@@ -148,4 +149,3 @@ class MetaDataTech(MetaDataBase):
         self._metadata['used_memory'] = scale_number(svmem.used)
         self._metadata['pct_memory_used'] = svmem.percent        
         self._metadata['object_size'] = sys.getsizeof(self._entity)
-
