@@ -18,66 +18,24 @@
 # License : BSD                                                               #
 # Copyright (c) 2020 DecisionScients                                          #
 # =========================================================================== #
-""" Management of administrative, descriptive and technical metadata.
+""" Management of administrative, descriptive, technical and process metadata.
 
 This module encapsulates the creation, management, and reporting of 
-administrative, descriptive, and technical metadata. Metadata is being 
-maintained for three categories of classes:
+administrative, descriptive, technical and process metadata, hereinafter
+called the metadata taxonomy. The classes include:
 
-    * Data : Classes that contain the data being analyzed and modeled.
-    * Analysis : Classes that encapsulate various types of analyses.
-    * Model : Machine learning models
+    * Metadata : Main class containing the metadata taxonomy objects.
+    * MetadataBuilder : Class responsible for constructing the Metadata class.
+    * AbstractMetadataBuilder : Interface for the MetadataBuilder class
+    * AbstractMetadata : Interace for metadata taxonomy classes.
+    * MetadataAdmin : Data and behaviors for administrative metadata
+    * MetadataDesc : Data and behaviors for descriptive metadata
+    * MetadataTech : Data and behaviors for technical metadata
+    * MetadataProcess : Data and behaviors for process metadata
 
-Though each of these types of classes have distinct metadata requirements,
-most can be characterized as:
-
-    * Administrative metadata - Management information
-    * Descriptive metadata - Discovery and identification
-    * Technical metadata - Systems and environment
-    * Process metadata - Log of tasks and operations performed
-
-As such, the following enumerates the classes in this module.
-
-    Factory Classes
-    ------------------------
-    AbstractMetadataFactory : Abstract base class and interface for factory classes.
-    MetadataFactoryData : Concrete metadata factory for Data objects.
-    MetadataFactoryAnalysis : Concrete metadata factory for Analysis objects.
-    MetadataFactoryModel : Concrete metadata factory for Model objects.
-    MetadataFactoryExperiment : Concrete metadata factory for Experiment objects.
-
-    Metadata Interface Classes
-    --------------------------
-    AbstractMetadataAdmin : Abstract base class for all administrative Metadata classes.
-    AbstractMetadataDesc : Abstract base class for all descriptive Metadata classes.
-    AbstractMetadataTech : Abstract base class for all technical Metadata classes.
-
-    Metadata Container Classes
-    --------------------------
-    Metadata : Encapsulates all metadata for a Data object 
-    MetadataAnalysis : Encapsulates all metadata for an Analysis object
-    MetadataModel : Encapsulates all metadata for a Model object
-
-    Metadata Classes for Data Objects
-    ----------------------------------
-    MetadataAdminData : Administrative Metadata class for Data objects 
-    MetadataDescData : Descriptive Metadata class for Data objects
-    MetadataTechData : Technical Metadata class for Data objects
-
-    Metadata Classes for Analysis Objects
-    -------------------------------------
-    MetadataAdminAnalysis : Administrative Metadata class for Analysis objects 
-    MetadataDescAnalysis : Descriptive Metadata class for Analysis objects
-    MetadataTechAnalysis : Technical Metadata class for Analysis objects
-
-    Metadata  Classes for Model Objects
-    -----------------------------------
-    MetadataAdminModel : Administrative Metadata class for Model objects 
-    MetadataDescModel : Descriptive Metadata class for Model objects
-    MetadataTechModel : Technical Metadata class for Model objects    
 
 """
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 import os
 from datetime import datetime
 import platform
@@ -88,184 +46,147 @@ import time
 import uuid
 
 from ..utils.format import scale_number
-# =========================================================================== #
-#                          METADATA FACTORY CLASSES                           #
-# =========================================================================== #
 # --------------------------------------------------------------------------- #
-#                         AbstractMetadataFactory                             #
+#                                 Metadata                                    #
 # --------------------------------------------------------------------------- #
-class AbstractMetadataFactory(ABC):
-    """ Behaviors required to create Metadata objects of various types.
+class Metadata:
+    """ Class containing administrative, descriptive, and technical metadata."""
+
+    def __init__(self):
+        self._metadata = {}
+
+    def add(self, metadata):          
+        """Adds metadata object.
+        
+        Parameters
+        ----------
+        metadata : A MetadataAdmin, MetadataDesc, or MetadataTech object        
+        """      
+        self._metadata[metadata.type] = metadata
+
+    def get(self, metadata_type=None):
+        """ Returns a metadata object.
+
+        Returns the administrative, descriptive, or technical metadata object
+        based upon a partial match of the metadata_type parameter.  
+
+        Parameters
+        ----------
+        metadata_type : str
+            String or partial string containing the type of metadata.
+        """
+        metadata = [value for key, value in self._metadata.items() \
+            if metadata_type.lower() in key.lower()]
+        
+        if len(metadata) == 0:
+            raise KeyError("No metadata type matching '{t}'. \
+                Run the 'print_types' method for a list of supported \
+                    metadata types.".format(t=metadata_type))
+        elif len(metadata) > 1:
+            raise KeyError("The metadata type entered '{t}'. \
+                matches more than one type of metadata. Please refine \
+                    your search with a more precise metadata type.\
+                        ".format(t=metadata_type))            
+        else:
+            return metadata
+
+    def print_types(self):
+        for k in self._metadata.keys():
+            print(k)
+
+    def print(self):
+        for v in self._metadata.values():
+            v.print()
+
+
+
+# --------------------------------------------------------------------------- #
+#                          AbstractMetadataBuilder                            #
+# --------------------------------------------------------------------------- #
+class AbstractMetadataBuilder(ABC):
+    """Abstract base class exposing methods for creating the Metadata objects."""
+
+    @abstractproperty
+    def metadata(self):
+        pass
+
+    @abstractmethod
+    def build_admin(self):
+        pass
+
+    @abstractmethod
+    def build_desc(self):
+        pass
+
+    @abstractmethod
+    def build_tech(self):
+        pass
+
+
+# --------------------------------------------------------------------------- #
+#                            MetadataBuilder                                  #
+# --------------------------------------------------------------------------- #
+class MetadataBuilder:
+    """ Builds a Metadata object containing admin, descriptive and tech metadata.
+
+    Implements the AbstractMetadataBuilder interface and provides specific
+    implementation steps to build the Metadata object.
     
-    The Abstract Factory interface declares a set of methods that return
-    different Metadata objects. These objects are called a family and are
-    related by the type of object the metadata will represent. 
-    """
-    @abstractmethod
-    def create_admin_metadata(self):
-        pass
-
-    @abstractmethod
-    def create_desc_metadata(self):
-        pass
-
-    @abstractmethod
-    def create_tech_metadata(self):
-        pass
-
-# --------------------------------------------------------------------------- #
-#                         MetadataFactoryData                                 #
-# --------------------------------------------------------------------------- #
-class MetaDataFactoryData(AbstractMetadataFactory):
-    """Creates Metadata objects for Data objects.
-
-    This concrete factory produces administrative, descriptive and technical
-    Metadata objects for Data objects.  
     """
 
-    def create_admin_metadata(self):
-        return MetadataAdminData()
+    def __init__(self, entity, name):        
+        """ Fresh builder object should contain an empty Metadata object."""
+        self._entity = entity
+        self._name = name
+        self._reset()
 
-    def create_desc_metadata(self):
-        return MetadataDescData()
+    def _reset(self):
+        self._metadata = Metadata()
 
-    def create_tech_metadata(self):
-        return MetadataTechData()
+    @property
+    def metadata(self):
+        """ Returns the metadata object once completed."""
+        metadata = self._metadata
+        self._reset()
+        return metadata
 
-# --------------------------------------------------------------------------- #
-#                       MetadataFactoryAnalysis                               #
-# --------------------------------------------------------------------------- #
-class MetadataFactoryAnalysis(AbstractMetadataFactory):
-    """Creates Metadata objects for Analysis objects.
+    def build_admin(self):
+        """Adds a administrative metadata subclass object."""
+        admin = MetadataAdmin(self._entity, self._name)
+        self._metadata.add(admin)
 
-    This concrete factory produces administrative, descriptive and technical
-    Metadata objects for Analysis objects.  
-    """
+    def build_desc(self):
+        """Adds a descriptive metadata subclass object."""
+        desc = MetadataDesc(self._entity, self._name)
+        self._metadata.add(desc)
 
-    def create_admin_metadata(self):
-        return MetadataAdminAnalysis()
-
-    def create_desc_metadata(self):
-        return MetadataDescAnalysis()
-
-    def create_tech_metadata(self):
-        return MetadataTechAnalysis()
-
-
-# --------------------------------------------------------------------------- #
-#                       MetadataFactoryModel                                  #
-# --------------------------------------------------------------------------- #
-class MetadataFactoryModel(AbstractMetadataFactory):
-    """Creates Metadata objects for Model objects.
-
-    This concrete factory produces administrative, descriptive and technical
-    Metadata objects for Model objects.  
-    """
-
-    def create_admin_metadata(self):
-        return MetadataAdminModel()
-
-    def create_desc_metadata(self):
-        return MetadataDescModel()
-
-    def create_tech_metadata(self):
-        return MetadataTechModel()
-
+    def build_tech(self):
+        """Adds a technical metadata subclass object."""
+        tech = MetadataTech(self._entity, self._name)
+        self._metadata.add(tech)
 
 # --------------------------------------------------------------------------- #
-#                       MetadataFactoryExperiment                             #
+#                           AbstractMetadata                                  #
 # --------------------------------------------------------------------------- #
-class MetadataFactoryExperiment(AbstractMetadataFactory):
-    """Creates Metadata objects for Experiment objects.
-
-    This concrete factory produces administrative, descriptive and technical
-    Metadata objects for Experiment objects.  
-    """
-
-    def create_admin_metadata(self):
-        return MetadataAdminExperiment()
-
-    def create_desc_metadata(self):
-        return MetadataDescExperiment()
-
-    def create_tech_metadata(self):
-        return MetadataTechExperiment()
-
-# =========================================================================== #
-#                             METADATA CLASSES                                #
-# =========================================================================== #
-# --------------------------------------------------------------------------- #
-#                          AbstractMetadataAdmin                              #
-# --------------------------------------------------------------------------- #
-class AbstractMetadataAdmin(ABC):
-    """ Abstract base class for all administrative metadata classes."""
+class AbstractMetadata(ABC):
+    """ Abstract base class for adminstrative, descriptive, & technical metadata.""" 
 
     def __init__(self, entity, name):
         self._entity = entity
-        self._metadata = {}        
-        self._metadata['name'] = name
-
-
-    @abstractmethod
-    def get(self, key):
-        """ Returns the administrative metadata."""
-        pass 
-
-    @abstractmethod
-    def add(self, key, value):
-        """ Adds administrative metadata element."""
-        pass
-
-    @abstractmethod
-    def change(self, key, value):
-        """Changes an administrative metadata key value pair."""
-        pass
-
-    @abstractmethod
-    def remove(self, key):
-        """Removes an administrative metadata key value pair."""
-        pass
-
-    @abstractmethod
-    def update(self):
-        """Updates the metadata affected by any changes to the object."""
-        pass
-
-    def print(self):
-        pprint(self._metadata)
-        
-# --------------------------------------------------------------------------- #
-#                          MetadataAdminData                                  #
-# --------------------------------------------------------------------------- #
-class MetadataAdminData(AbstractMetadataAdmin):
-    """Concrete administrative metadata object for Data objects."""
-
-    def __init__(self, entity, name):
-        super(MetadataAdminData, self).__init__(entity, name)
-
-        # Extract user datetime and object data once to avoid repeated calls.
-        user = os.getlogin()
-        date = datetime.now()
-        date_string = date.year + '-' + date.month + '-' + \
-            date.day + '_' + date.hour + '-' + date.minute + '-' \
-                + date.second
-        date_formatted = time.strftime("%c")
-        classname = entity.__class__.__name__
-
-        self._metadata['id'] = uuid.uuid4()                
-        self._metadata['name'] = name
-        self._metadata['creator'] = user
-        self._metadata['created'] = date_formatted
-        self._metadata['modifier'] = user
-        self._metadata['modified'] = date_formatted
+        self._metadata = {}
+        self._metadata['name'] = name    
         self._metadata['updates'] = 0
-        self._metadata['classname'] = classname        
-        self._metadata['objectname'] = user + '_' + date_string + '_' + time + '_'\
-            + classname + '_' + name
 
-    def get(self, key):
+    def update(self, event=None):
+        """Updates metadata attributes to reflect changes to object."""
+        self._metadata['updates'] += 1
+
+    def get(self, key=None):
         """Returns the value for a specific attribute."""
-        return self._metadata.get(key, None)
+        if key:
+            return self._metadata.get(key, None)
+        else:
+            return self._metadata.copy()
 
     def add(self, key, value):
         """Adds metadata attribute."""
@@ -286,108 +207,76 @@ class MetadataAdminData(AbstractMetadataAdmin):
         try:
             del self._metadata[key]
         except KeyError:
-            print("Key {key} does not exist.".format(key=key))
-
-    def update(self):
-        """Updates metadata attributes to reflect changes to object."""
-        self._metadata['modifier'] = os.getlogin()
-        self._metadata['modified'] = time.strftime("%c")
-        self._metadata['updates'] += 1
-        
-
-
-
-
-
-
-class MetadataBase(ABC):
-    """Abstract base class from which all Metadata* classes are derived."""
-    def __init__(self, entity):
-        self._entity = entity
-        self._metadata = {}
-    
-    def get_metadata(self):
-        return self._metadata.copy()
-
-    def update_metadata(self):
-        pass
+            print("Key {key} does not exist.".format(key=key))     
 
     def print(self):
-        pprint(self._metadata)
+        """Prints the metadata."""
+        pprint(self._metadata)       
 
 # --------------------------------------------------------------------------- #
-#                              MetadataAdmin                                  #
+#                            MetadataAdmin                                    #
 # --------------------------------------------------------------------------- #
-class MetadataAdmin(MetadataBase):
-    """ Storage and management of administrative metadata."""
+class MetadataAdmin(AbstractMetadata):
+    """Concrete administrative metadata object."""
 
-    def __init__(self, entity):
-        super(MetadataAdmin, self).__init__(entity)
+    def __init__(self, entity, name):
+        super(MetadataAdmin, self).__init__(entity, name)
+        self.metadata_type = 'Administrative'
 
-        self._metadata['id'] = uuid.uuid4()                
-        self._metadata['creator'] = os.getlogin()
-        self._metadata['created'] = time.strftime("%c")
-        self._metadata['modifier'] = os.getlogin()
-        self._metadata['modified'] = time.strftime("%c")
+        # Extract user datetime and object data once to avoid repeated calls.
+        user = os.getlogin()
+        date = datetime.now()
+        date_string = date.year + '-' + date.month + '-' + \
+            date.day + '_' + date.hour + '-' + date.minute + '-' \
+                + date.second
+        date_formatted = time.strftime("%c")
+        classname = entity.__class__.__name__
+        
+        self._metadata['id'] = uuid.uuid4()               
+        self._metadata['name'] = name
+        self._metadata['creator'] = user
+        self._metadata['created'] = date_formatted
+        self._metadata['modifier'] = user
+        self._metadata['modified'] = date_formatted
+        self._metadata['classname'] = classname        
+        self._metadata['objectname'] = user + '_' + date_string + '_' + time + '_'\
+            + classname + '_' + name
 
-    def update_metadata(self):
+    def update(self, event=None):
+        """Updates metadata attributes to reflect changes to object."""
+        super(MetadataAdmin, self).update()
         self._metadata['modifier'] = os.getlogin()
         self._metadata['modified'] = time.strftime("%c")
 
 # --------------------------------------------------------------------------- #
 #                              MetadataDesc                                   #
 # --------------------------------------------------------------------------- #
-class MetadataDesc(MetadataBase):
+class MetadataDesc(AbstractMetadata):
     """ Storage and management of descriptive metadata."""
 
     def __init__(self, entity, name):
-        super(MetadataDesc, self).__init__(entity)
+        super(MetadataDesc, self).__init__(entity, name)
+        self.metadata_type = 'Descriptive'
 
-        self._metadata['name'] = name
         self._metadata['description'] = ""
         self._metadata['class'] = entity.__class__.__name__
         self._metadata['version'] = "0.1.0"
         
-    @property
-    def name(self):
-        return self._metadata['name']
-
-    @name.setter
-    def name(self, value):
-        self._metadata['name'] = value
-        return self
-
-    @property
-    def description(self):
-        return self._metadata['description']
-
-    @description.setter
-    def description(self, value):
-        self._metadata['description'] = value
-
-    @property
-    def version(self):
-        return self._metadata['version']
-
-    @version.setter
-    def version(self, value):
-        self._metadata['version'] = value
-
-
-
 # --------------------------------------------------------------------------- #
 #                              MetadataTech                                   #
 # --------------------------------------------------------------------------- #
-class MetadataTech(MetadataBase):
+class MetadataTech(AbstractMetadata):
     """ Storage and management of technical metadata."""
 
-    def __init__(self, entity):
-        super(MetadataTech, self).__init__(entity)
+    def __init__(self, entity, name):
+        super(MetadataTech, self).__init__(entity, name)
+        self.metadata_type = 'Technical'
 
         self.update_metadata()
 
-    def update_metadata(self):
+    def update_metadata(self, event=None):
         """Updates technical metadata."""
+        super(MetadataTech, self).update()
         uname = platform.uname()
         svmem = psutil.virtual_memory()
 
@@ -405,3 +294,32 @@ class MetadataTech(MetadataBase):
         self._metadata['used_memory'] = scale_number(svmem.used)
         self._metadata['pct_memory_used'] = svmem.percent        
         self._metadata['object_size'] = sys.getsizeof(self._entity)
+
+# --------------------------------------------------------------------------- #
+#                              MetadataProcess                                #
+# --------------------------------------------------------------------------- #
+class MetadataProcess(AbstractMetadata):
+    """ Storage and management of process metadata."""
+
+    def __init__(self, entity, name):
+        super(MetadataProcess, self).__init__(entity, name)
+        self.metadata_type = 'Process'      
+
+        self._metadata['log'] = []
+
+        user = os.getlogin()
+        date_formatted = time.strftime("%c")
+        classname = entity.__class__.__name__        
+        msg = classname + ' object named ' + name + ' was instantiated ' +\
+            ' at ' + date_formatted + ' by ' + user
+        self._metadata['log'].append(msg)
+
+    def update(self, event=None):
+        """Logs an activity update.""" 
+        user = os.getlogin()
+        date_formatted = time.strftime("%c")
+        classname = self._entity.__class__.__name__        
+        msg = 'Class : ' + classname + 'Name : ' + name +\
+            'Date : ' + date_formatted + 'Event : ' + event
+        if event:
+            self._metadata['log'].append(msg)
