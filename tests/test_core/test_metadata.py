@@ -86,6 +86,18 @@ class MetaDataTests:
         print(metadata2)
         assert metadata1 != metadata2, "Metadata tech didn't update"
         
-
+    @mark.metadata
+    def test_metadata_print(self):
+        print("\n\nMetaData Print Testing ")
+        print("="*40)
+        print("\nPrint admin metadata")
+        metadata = MetaDataAdmin(self)
+        metadata.print()
+        print("\nPrint desc metadata")
+        metadata = MetaDataDesc(self, name='some name')
+        metadata.print()
+        print("\nPrint tech metadata")
+        metadata = MetaDataTech(self)
+        metadata.print()
 
 

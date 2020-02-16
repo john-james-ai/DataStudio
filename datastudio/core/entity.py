@@ -59,88 +59,90 @@ class Entity(ABC):
         """Obtain all metadata and return a dictionary."""        
         metadata = {}
         for k, v in self._metadata.items():
-            metadata[k] = v.get_metadata()
+            metadata[k] = v.get_metadata().copy()
         return metadata
 
     def update_metadata(self):
         """Update all metadata.""" 
         for k, v in self._metadata.items():
-            v.update_metadata()   
-            self._metadata[k] = v
+            v.update_metadata()  
         return self
 
     def print_metadata(self):
         """Print all metadata."""
-        for _, v in self._metadata.items():
+        for _, v in self._metadata.items():            
             v.print()
+            print("\n")
         return self
 
     # Administrative metadata management
     def get_metadata_admin(self):
         """ Obtain administrative metadata."""
-        return self._metadata_admin.get_metadata()
+        return self._metadata['admin'].get_metadata().copy()
 
     def update_metadata_admin(self):
         """ Update administrative metadata."""
-        return self._metadata_admin.update_metadata()
+        self._metadata['admin'].update_metadata()        
+        return self
 
     def print_metadata_admin(self):
         """ Prints administrative metadata."""
-        self._metadata_admin.print()        
+        self._metadata['admin'].print()        
         return self
 
     # Descriptive metadata management
     def get_metadata_desc(self):
         """ Obtain descriptive metadata."""
-        return self._metadata_desc.get_metadata()
+        return self._metadata['desc'].get_metadata().copy()
 
     def update_metadata_desc(self):
         """ Update descriptive metadata."""
-        return self._metadata_desc.update_metadata()
+        return self._metadata['desc'].update_metadata()
 
     def print_metadata_desc(self):
         """ Prints descriptive metadata."""
-        self._metadata_desc.print()        
+        self._metadata['desc'].print()        
         return self    
 
     @property
     def name(self):
         """Returns the name of the object."""
-        return self._metadata_desc.name
+        return self._metadata['desc'].name
 
     @name.setter
     def name(self, value):
-        self._metadata_desc.name = value
+        self._metadata['desc'].name = value
         return self
 
     @property
     def description(self):
-        return self._metadata_desc.description
+        return self._metadata['desc'].description
 
     @description.setter
     def description(self, value):
-        self._metadata_desc.description = value
+        self._metadata['desc'].description = value
         return self
 
     @property
     def version(self):
-        return self._metadata_desc.version
+        return self._metadata['desc'].version
 
     @version.setter
     def version(self, value):
-        self._metadata_desc.version = value
+        self._metadata['desc'].version = value
         return self
 
     # Technical metadata management
-    def get_metadata_admin(self):
+    def get_metadata_tech(self):
         """ Obtain technical metadata."""
-        return self._metadata_tech.get_metadata()
+        return self._metadata['tech'].get_metadata().copy()
 
     def update_metadata_tech(self):
         """ Update technical metadata."""
-        return self._metadata_tech.update_metadata()
+        self._metadata['tech'].update_metadata()
+        return self
 
     def print_metadata_tech(self):
         """ Prints technical metadata."""
-        self._metadata_tech.print()        
+        self._metadata['tech'].print()        
         return self        

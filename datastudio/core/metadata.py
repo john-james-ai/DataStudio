@@ -32,8 +32,10 @@ related classes. The classes in this module are:
 from abc import ABC, abstractmethod
 import os
 from datetime import datetime
-import psutil
 import platform
+from pprint import pprint
+import psutil
+import sys
 import time
 import uuid
 
@@ -53,9 +55,8 @@ class MetaDataBase(ABC):
     def update_metadata(self):
         pass
 
-    @abstractmethod
     def print(self):
-        pass
+        pprint(self._metadata)
 
 # --------------------------------------------------------------------------- #
 #                              MetaDataAdmin                                  #
@@ -76,11 +77,6 @@ class MetaDataAdmin(MetaDataBase):
         self._metadata['modifier'] = os.getlogin()
         self._metadata['modified'] = time.strftime("%c")
 
-    # TODO: Create print method
-    def print(self):
-        pass
-        
-
 # --------------------------------------------------------------------------- #
 #                              MetaDataDesc                                   #
 # --------------------------------------------------------------------------- #
@@ -95,10 +91,6 @@ class MetaDataDesc(MetaDataBase):
         self._metadata['class'] = entity.__class__.__name__
         self._metadata['version'] = "0.1.0"
         
-    #TODO: 
-    def print(self):
-        pass
-
     @property
     def name(self):
         return self._metadata['name']
@@ -155,10 +147,5 @@ class MetaDataTech(MetaDataBase):
         self._metadata['available_memory'] = scale_number(svmem.available)
         self._metadata['used_memory'] = scale_number(svmem.used)
         self._metadata['pct_memory_used'] = svmem.percent        
-
-    # TODO: Create print method
-    def print(self):
-        pass
-
-
+        self._metadata['object_size'] = sys.getsizeof(self._entity)
 
