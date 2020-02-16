@@ -28,31 +28,26 @@ from datastudio.core.metadata import MetaDataTech
 # --------------------------------------------------------------------------- #
 #                              Entity                                         #
 # --------------------------------------------------------------------------- #
-class Entity(ABC):
-    """Abstract base class for all Entity related classes.
+class MetaData:
+    """MetaData master class. 
     
-    The Entity class is an abstract base class that defines the information
-    and behavior for all classes with an entity stereotype. Examples of 
-    Entity subclasses include:
-        - DataObject : A wrapper for a dataset or dataframe.   
-        - Project : Encapsulates all objects and behaviors for a project.
-        - Task : Contains objects and behaviors to accomplish specific tasks.
-    
-    The Entity class encapsulates primarily administrative information and
-    behaviors such as metadata creation and management and logging. 
+    Class provides behaviors to capture and manage administrative, 
+    descriptive, and technical metadata.
+
+    Parameters
+    ----------
+    entity : Object for which the metadata is being created
+
     """
     
-    def __init__(self, name):        
+    def __init__(self, entity):        
         self._metadata = {}
-        self._create_metadata(name)
-        self._logger = logging.getLogger(__name__)
-        self._logger.info('Class instantiation.')
+        self._create_metadata(entity)
 
-
-    def _create_metadata(self, name):
+    def _create_metadata(self):
         """Factory method that creates metadata objects."""
         self._metadata['admin'] = MetaDataAdmin(self)
-        self._metadata['desc'] = MetaDataDesc(self, name)
+        self._metadata['desc'] = MetaDataDesc(self)
         self._metadata['tech'] = MetaDataTech(self)
 
 
@@ -80,6 +75,11 @@ class Entity(ABC):
     def get_metadata_admin(self):
         """ Obtain administrative metadata."""
         return self._metadata['admin'].get_metadata().copy()
+
+    def add_admin(self, key, value):
+        """Adds administrative metadata."""
+
+
 
     def update_metadata_admin(self):
         """ Update administrative metadata."""
