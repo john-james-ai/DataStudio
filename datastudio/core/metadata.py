@@ -62,7 +62,7 @@ class Metadata:
         ----------
         metadata : A MetadataAdmin, MetadataDesc, or MetadataTech object        
         """      
-        self._metadata[metadata.type] = metadata
+        self._metadata[metadata.metadata_type] = metadata
 
     def get(self, metadata_type=None):
         """ Returns a metadata object.
@@ -76,19 +76,14 @@ class Metadata:
             String or partial string containing the type of metadata.
         """
         metadata = [value for key, value in self._metadata.items() \
-            if metadata_type.lower() in key.lower()]
+            if metadata_type.lower() in key.lower()]        
         
         if len(metadata) == 0:
             raise KeyError("No metadata type matching '{t}'. \
                 Run the 'print_types' method for a list of supported \
                     metadata types.".format(t=metadata_type))
-        elif len(metadata) > 1:
-            raise KeyError("The metadata type entered '{t}'. \
-                matches more than one type of metadata. Please refine \
-                    your search with a more precise metadata type.\
-                        ".format(t=metadata_type))            
         else:
-            return metadata
+            return metadata[0]
 
     def print_types(self):
         for k in self._metadata.keys():
@@ -165,6 +160,36 @@ class MetadataBuilder:
         tech = MetadataTech(self._entity, self._name)
         self._metadata.add(tech)
 
+    def build_process(self):
+        """Adds a process metadata subclass object."""
+        process = MetadataProcess(self._entity, self._name)
+        self._metadata.add(process)
+
+# --------------------------------------------------------------------------- #
+#                            MetadataDirector                                 #
+# --------------------------------------------------------------------------- #
+class MetadataDirector:
+    """Encapsulates the steps required to construct the Metadata class."""
+
+    def __init__(self):
+        self._builder = None
+
+    @property
+    def builder(self):
+        return self._builder
+
+    @builder.setter
+    def builder(self, builder):
+        """Constructs the Metadata object associated with the builder instance.""" 
+        self._builder = builder
+
+    def build(self):
+        """Constructs Metadata object using builder."""
+        self._builder.build_admin() 
+        self._builder.build_desc() 
+        self._builder.build_tech() 
+        self._builder.build_process() 
+
 # --------------------------------------------------------------------------- #
 #                           AbstractMetadata                                  #
 # --------------------------------------------------------------------------- #
@@ -184,7 +209,10 @@ class AbstractMetadata(ABC):
     def get(self, key=None):
         """Returns the value for a specific attribute."""
         if key:
-            return self._metadata.get(key, None)
+            if key in self._metadata:
+                return self._metadata.get(key, None)
+            else:
+                raise KeyError("Key {key} does not exist.".format(key=key))
         else:
             return self._metadata.copy()
 
@@ -197,10 +225,10 @@ class AbstractMetadata(ABC):
 
     def change(self, key, value):
         """Change a key value pair."""
-        try:
+        if key not in self._metadata:
+            raise KeyError("Key {key} does not exist.".format(key=key))
+        else:
             self._metadata[key] = value
-        except KeyError:
-            print("Key {key} does not exist.".format(key=key))
 
     def remove(self, key):
         """Remove a key value pair based upon 'key'."""
@@ -226,20 +254,20 @@ class MetadataAdmin(AbstractMetadata):
         # Extract user datetime and object data once to avoid repeated calls.
         user = os.getlogin()
         date = datetime.now()
-        date_string = date.year + '-' + date.month + '-' + \
-            date.day + '_' + date.hour + '-' + date.minute + '-' \
-                + date.second
+        date_string = str(date.year) + '-' + str(date.month) + '-' + \
+            str(date.day) + '_' + str(date.hour) + '-' + str(date.minute) + '-' \
+                + str(date.second)
         date_formatted = time.strftime("%c")
         classname = entity.__class__.__name__
         
-        self._metadata['id'] = uuid.uuid4()               
+        self._metadata['id'] = str(uuid.uuid4())
         self._metadata['name'] = name
         self._metadata['creator'] = user
         self._metadata['created'] = date_formatted
         self._metadata['modifier'] = user
         self._metadata['modified'] = date_formatted
         self._metadata['classname'] = classname        
-        self._metadata['objectname'] = user + '_' + date_string + '_' + time + '_'\
+        self._metadata['objectname'] = user + '_' + date_string + '_' + '_'\
             + classname + '_' + name
 
     def update(self, event=None):
@@ -272,7 +300,23 @@ class MetadataTech(AbstractMetadata):
         super(MetadataTech, self).__init__(entity, name)
         self.metadata_type = 'Technical'
 
-        self.update_metadata()
+        uname = platform.uname()
+        svmem = psutil.virtual_memory()
+
+        self._metadata['system'] = uname.system
+        self._metadata['node'] = uname.node
+        self._metadata['release'] = uname.release
+        self._metadata['version'] = uname.version
+        self._metadata['machine'] = uname.machine
+        self._metadata['processor'] = uname.processor
+        self._metadata['release'] = uname.release
+        self._metadata['physical_cores'] = psutil.cpu_count(logical=False)
+        self._metadata['total_cores'] = psutil.cpu_count(logical=True)
+        self._metadata['total_memory'] = scale_number(svmem.total)
+        self._metadata['available_memory'] = scale_number(svmem.available)
+        self._metadata['used_memory'] = scale_number(svmem.used)
+        self._metadata['pct_memory_used'] = svmem.percent        
+        self._metadata['object_size'] = sys.getsizeof(self._entity)
 
     def update_metadata(self, event=None):
         """Updates technical metadata."""
@@ -310,8 +354,8 @@ class MetadataProcess(AbstractMetadata):
         user = os.getlogin()
         date_formatted = time.strftime("%c")
         classname = entity.__class__.__name__        
-        msg = classname + ' object named ' + name + ' was instantiated ' +\
-            ' at ' + date_formatted + ' by ' + user
+        msg = classname + " object named '" + name + "' was instantiated " +\
+            ' at ' + date_formatted + ' by ' + user + '.'
         self._metadata['log'].append(msg)
 
     def update(self, event=None):
@@ -319,7 +363,11 @@ class MetadataProcess(AbstractMetadata):
         user = os.getlogin()
         date_formatted = time.strftime("%c")
         classname = self._entity.__class__.__name__        
-        msg = 'Class : ' + classname + 'Name : ' + name +\
+        msg = 'Class : ' + classname + 'Name : ' + self._name +\
             'Date : ' + date_formatted + 'Event : ' + event
         if event:
             self._metadata['log'].append(msg)
+
+    def print(self):
+        for e in self._metadata['log']:
+            print(e)

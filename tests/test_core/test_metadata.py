@@ -25,80 +25,114 @@ import pytest
 from pytest import mark
 import time
 
-from datastudio.core.metadata import MetaDataAdmin, MetaDataDesc
-from datastudio.core.metadata import MetaDataTech
+from datastudio.core.metadata import Metadata, MetadataBuilder, MetadataDirector
+from datastudio.core.metadata import MetadataAdmin, MetadataDesc, MetadataTech
+from datastudio.core.metadata import MetadataProcess
 class MetaDataTests:
   
 
     @mark.metadata
-    def test_metadata_admin(self):
-        print("\n\nMetaData Admin Testing ")
+    def test_metadata_build(self):
+
+        print("\n\nMetadata Object")
         print("="*40)
-        metadata = MetaDataAdmin(self)
-        metadata1 = metadata.get_metadata()
-        print("\nAdministrative metadata before update")
-        print(metadata1)
-        assert isinstance(metadata1, dict), "Metadata admin didn't return a dict"
+        director = MetadataDirector()
+        builder = MetadataBuilder(self, name='test_object')
+        director.builder = builder
+        director.build()
+        metadata = builder.metadata
+        metadata.print_types()
 
-        time.sleep(2)
+        print("\n\nMetadata Administrative")
+        print("-"*40)
+        admin = metadata.get('admin')    
+        admin.print()
+        assert isinstance(admin, MetadataAdmin), "MetadataAdmin not built."
+        
+        print("\n\nMetadata Descriptive")
+        print("-"*40)
+        desc = metadata.get('desc')                
+        desc.print()
+        assert isinstance(desc, MetadataDesc), "MetadataDesc not built."
 
-        metadata.update_metadata()
-        metadata2 = metadata.get_metadata()
-        print("\nAdministrative metadata after update")
-        print(metadata2)
-        assert metadata1 != metadata2, "Metadata admin didn't update"
+        print("\n\nMetadata Technical")
+        print("-"*40)
+        tech = metadata.get('tech')                
+        tech.print()
+        assert isinstance(tech, MetadataTech), "MetadataTech not built."
+
+        print("\n\nMetadata Process")
+        print("-"*40)
+        process = metadata.get('process')                
+        process.print()
+        assert isinstance(process, MetadataProcess), "MetadataProcess not built."
+
+        with pytest.raises(KeyError):
+            metadata.get('xxx')
 
     @mark.metadata
-    def test_metadata_desc(self):
-        print("\n\nMetaData Desc Testing ")
-        print("="*40)
-        name = 'metadata_desc'
-        metadata = MetaDataDesc(self, name)
-        metadata1 = metadata.get_metadata()
-        print("\nDescriptive metadata before update")
-        print(metadata1)
-        assert isinstance(metadata1, dict), "Metadata desc didn't return a dict"
-        
-        time.sleep(2)
-        
-        metadata.name = 'new name'
-        metadata.description = 'new description'
-        metadata2 = metadata.get_metadata()        
-        print("\nDescriptive metadata after update")
-        print(metadata2)
-        assert metadata1 != metadata2, "Metadata desc didn't update"
-
-    @mark.metadata
-    def test_metadata_tech(self):
-        print("\n\nMetaData Tech Testing ")
-        print("="*40)
-        metadata = MetaDataTech(self)
-        metadata1 = metadata.get_metadata()
-        print("\nTechnical metadata before update")
-        print(metadata1)
-        assert isinstance(metadata1, dict), "Metadata tech didn't return a dict"
-        
-        # Memory consumption function
-        test_str = ' ' * 512000000
-        
-        metadata.update_metadata()
-        metadata2 = metadata.get_metadata()
-        print("\nTechnical metadata after update")
-        print(metadata2)
-        assert metadata1 != metadata2, "Metadata tech didn't update"
+    def test_metadata_admin(self, get_metadata):
+        print("\n\nMetadata Administrative Test")
+        print("-"*40)        
+        metadata = get_metadata
+        admin = metadata.get('admin')
+        admin.update()
+        assert admin.get('updates') == 1, "Admin updates not correct."
+        admin.add(key='artist', value='BOC')
+        assert admin.get('artist') == 'BOC', "Admin get error."
+        with pytest.raises(ValueError):        
+            admin.add(key='artist', value='dunno')
+        with pytest.raises(KeyError):        
+            admin.change(key='cook', value='BOC')
+        admin.change(key='artist', value='air')
+        assert admin.get('artist') == 'air', "Admin change error."
+        admin.remove(key='artist')
+        with pytest.raises(KeyError):        
+            assert admin.get('artist') == 'air', "Admin remove failed to raise Keyerror."
+        assert isinstance(admin.get(), dict), "Get error, failed to return all admin metadata"
         
     @mark.metadata
-    def test_metadata_print(self):
-        print("\n\nMetaData Print Testing ")
-        print("="*40)
-        print("\nPrint admin metadata")
-        metadata = MetaDataAdmin(self)
-        metadata.print()
-        print("\nPrint desc metadata")
-        metadata = MetaDataDesc(self, name='some name')
-        metadata.print()
-        print("\nPrint tech metadata")
-        metadata = MetaDataTech(self)
-        metadata.print()
+    def test_metadata_desc(self, get_metadata):
+        print("\nMetadata Descriptive Test")
+        print("-"*40)        
+        metadata = get_metadata
+        desc = metadata.get('desc')
+        desc.update()
+        assert desc.get('updates') == 1, "Admin updates not correct."
+        desc.add(key='artist', value='BOC')
+        assert desc.get('artist') == 'BOC', "Admin get error."
+        with pytest.raises(ValueError):        
+            desc.add(key='artist', value='dunno')
+        with pytest.raises(KeyError):        
+            desc.change(key='cook', value='BOC')
+        desc.change(key='artist', value='air')
+        assert desc.get('artist') == 'air', "Admin change error."
+        desc.remove(key='artist')
+        with pytest.raises(KeyError):        
+            assert desc.get('artist') == 'air', "Admin remove failed to raise Keyerror."
+        assert isinstance(desc.get(), dict), "Get error, failed to return all desc metadata"
 
+    @mark.metadata
+    def test_metadata_tech(self, get_metadata):
+        print("\nMetadata Technical Test")
+        print("-"*40)        
+        metadata = get_metadata
+        tech = metadata.get('tech')
+        tech.update()
+        assert tech.get('updates') == 1, "Admin updates not correct."
+        tech.add(key='artist', value='BOC')
+        assert tech.get('artist') == 'BOC', "Admin get error."
+        with pytest.raises(ValueError):        
+            tech.add(key='artist', value='dunno')
+        with pytest.raises(KeyError):        
+            tech.change(key='cook', value='BOC')
+        tech.change(key='artist', value='air')
+        assert tech.get('artist') == 'air', "Admin change error."
+        tech.remove(key='artist')
+        with pytest.raises(KeyError):        
+            assert tech.get('artist') == 'air', "Admin remove failed to raise Keyerror."
+        assert isinstance(tech.get(), dict), "Get error, failed to return all tech metadata"
 
+        
+               
+        

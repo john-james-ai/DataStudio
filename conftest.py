@@ -23,6 +23,7 @@ import os
 import numpy as np
 from pytest import fixture
 
+from datastudio.core.metadata import Metadata, MetadataBuilder, MetadataDirector
 from datastudio.core.file import File
 USECOLS = ["id", "host_id",
             "host_response_rate",
@@ -109,6 +110,14 @@ def get_dfs():
     dfs = [dfn, dfsf]
     return dfs
 
+@fixture(scope='function')
+def get_metadata():
+    director = MetadataDirector()
+    builder = MetadataBuilder(MetadataDirector, name='test_object')
+    director.builder = builder
+    director.build()
+    metadata = builder.metadata    
+    return metadata
 
 
 
