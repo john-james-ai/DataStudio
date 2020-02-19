@@ -57,7 +57,11 @@ from collections import OrderedDict
 import pandas as pd
 
 from datastudio.core.file import FileIO
-from datastudio.core.metadata import MetadataFactoryDirector
+from datastudio.core.metadata import MetadataRemoteFactory
+from datastudio.core.metadata import MetadataRDBMSFactory
+from datastudio.core.metadata import MetadataFileFactory
+from datastudio.core.metadata import MetadataDataCollectionFactory
+from datastudio.core.metadata import MetadataDataSetFactory
 # =========================================================================== #
 #                              DATASET CLASSES                                #
 # =========================================================================== #
@@ -68,8 +72,7 @@ class AbstractDataSet(ABC):
     """Abstract base class for all DataSet classes."""
 
     def __init__(self, name, **kwargs):
-        self._name = name
-        self._metadata = MetadataFactoryDirector(self, name)        
+        self._name = name       
         self._locked = False
         self._is_collection = False
 
@@ -121,6 +124,15 @@ class DataSet(AbstractDataSet):
     def __init__(self, name, datasource=None, datastore=None):
         super(DataSet, self).__init__(name, datasource, datastore)
         self._data = pd.DataFrame
+        self.metadata = self._build_metadata()
+
+    def _build_metadata(self):
+        factory = MetadataDataSetFactory(self, self._name)
+        factory.create_admin() 
+        factory.create_desc() 
+        factory.create_tech() 
+        factory.create_process() 
+        return factory.metadata
 
     @property
     def datasource(self):
@@ -128,7 +140,7 @@ class DataSet(AbstractDataSet):
 
     @datasource.setter
     def datasource(self, value):
-        if isinstance(value, DataSource):
+        if isinstance(value, AbstractDataSource):
             self._datasource = value
         else:
             raise TypeError("Not a valid DataSource object.")
@@ -139,7 +151,7 @@ class DataSet(AbstractDataSet):
 
     @datastore.setter
     def datastore(self, value):
-        if isinstance(value, DataStore):
+        if isinstance(value, AbstractDataStore):
             self._datastore = value
         else:
             raise TypeError("Not a valid DataSource object.")
@@ -195,6 +207,16 @@ class DataCollection(AbstractDataSet):
         if entity:
             key = self._format_key(entity)
             self._collection[key] = entity
+
+        self.metadata = self._build_metadata()
+
+    def _build_metadata(self):
+        factory = MetadataDataCollectionFactory(self, self._name)
+        factory.create_admin() 
+        factory.create_desc() 
+        factory.create_tech() 
+        factory.create_process() 
+        return factory.metadata
 
     def _format_key(self, entity, name=None):
         if name:
@@ -337,9 +359,9 @@ class AbstractDataStore(ABC):
     
     """
 
-    def __init__(self, name, **kwargs):        
+    def __init__(self, name, path):        
         self._name = name        
-        self._metadata = MetadataFactoryDirector(self, name, kwargs)
+        self._path = path        
         self._locked = False
         self._is_collection = False
 
@@ -380,8 +402,18 @@ class DataStoreFile(AbstractDataStore):
     """
 
     def __init__(self, name, path):
-        super(DataStoreFile, self).__init__(self, name, path=path)                
-        self._io = FileIO(path)
+        super(DataStoreFile, self).__init__(name, path)                
+        self._io = FileIO()
+        self._path = path
+        self.metadata = self._build_metadata()
+
+    def _build_metadata(self):
+        factory = MetadataFileFactory(self, self._name, path=self._path)
+        factory.create_admin() 
+        factory.create_desc() 
+        factory.create_tech() 
+        factory.create_process() 
+        return factory.metadata        
 
     def load(self):
         """ Loads data from designated path and returns as DataFrame."""
@@ -399,14 +431,53 @@ class DataStoreFile(AbstractDataStore):
         self._io.write(data)
 
 
+# =========================================================================== #
+#                            DATA SOURCE CLASSES                              #
+# =========================================================================== #
+# --------------------------------------------------------------------------- #
+#                           AbstractDataSource                                #
+# --------------------------------------------------------------------------- #
+class AbstractDataSource(ABC):
+    """Defines the interface for DataSource subclasses.
+
+    Parameters
+    ----------
+    name : str
+        The name of the DataSource object.
+    **kwargs : str
+        Designates an arbitrary set of parameters required to  access the 
+        source.
+    
+    """
+
+    def __init__(self, name, **kwargs):        
+        self._name = name        
+        self._locked = False
+        self._is_collection = False
+
+    @property
+    def name(self):
+        """Returns the name of the DataSet."""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+        admin = next( v for k,v in self._metadata.items() if k.startswith('admin'))
+        admin.change('name', value)
+
+    @abstractmethod
+    def load(self):
+        """Loads a DataFrame from the DataSource."""
+        pass
+
 # --------------------------------------------------------------------------- #
 #                             DataSourceFile                                  #
 # --------------------------------------------------------------------------- #
-class DataSourceFile(DataStoreFile):
-    """ Provides access to a DataSource object.
-
-    This class inherits from the DataStoreFile class and provides read
-    access to data stored in one of various tabular file
+class DataSourceFile(AbstractDataSource):
+    """ Loads and saves DataFrame objects in various file formats.
+    
+    The class provides input and output behavior for various tabular file
     formats such as .csv, .csv.gz, and Excel.
 
     Parameters
@@ -416,25 +487,22 @@ class DataSourceFile(DataStoreFile):
     """
 
     def __init__(self, name, path):
-        super(DataStoreFile, self).__init__(self, name, path=path)   
-        self._path = path             
-        self._io = FileIO(path)
+        super(DataSourceFile, self).__init__(name, path)                
+        self._io = FileIO()
+        self._path = path
+        self.metadata = self._build_metadata()
+
+    def _build_metadata(self):
+        factory = MetadataFileFactory(self, self._name, self._path)
+        factory.create_admin() 
+        factory.create_desc() 
+        factory.create_tech() 
+        factory.create_process() 
+        return factory.metadata          
 
     def load(self):
         """ Loads data from designated path and returns as DataFrame."""
         return self._io.read(self._path)
     
-    def save(self, data):
-        """ DataSources are immutable."""
-        pass
-
-
-
-
-
-        
-
-
-
 
     

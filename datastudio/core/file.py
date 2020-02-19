@@ -381,7 +381,64 @@ class FileIOCSV(FileIOStrategy):
             path = None
         return path
         
+# ---------------------------------------------------------------------------- #
+#                               FileIOExcel                                    #  
+# ---------------------------------------------------------------------------- #
+class FileIOExcel(FileIOStrategy):
+    """Read and write Excel files and returning DataFrames."""
 
+    def read(self, path, filter=None):
+        """Reads a Excel file, designated by 'path' into a DataFrame.
+        
+        Parameters
+        ----------
+        path : str
+            The relative or fully qualified file path
+        filter : list
+            A list of column names to return in the result
+
+        Returns
+        -------
+        DataFrame : The file contents in DataFrame format. Returns None if 
+                    unable to read the file.
+        
+        """
+        try:
+            result = pd.read_excel(path, names=filter)
+        except IOError:
+            print("The file, {fname}, does not exist. None returned.".format(fname=path))
+            result = None
+        except Exception as e:
+            print(e)
+            result = None
+        return result
+
+    def write(self, path, content):
+        """Accepts a filename and a DataFrame and writes it to a Excel file.
+        
+        Parameters
+        ----------
+        path : str
+            The relative or fully qualified file path
+        content : DataFrame
+            The DataFrame object to be written to file.
+
+        Returns
+        -------
+        str
+            If successful, the method returns the path to which the file was
+            written.  If unsuccessful, None is returned.
+
+        """
+
+        self._check_dir(path)
+        path = self._check_file_ext(path, '.xlsx')
+        try:
+            content.to_excel(path, index=False)
+        except Exception as e:
+            print(e)
+            path = None
+        return path
 # ---------------------------------------------------------------------------- #
 #                               FileIOTXT                                      #  
 # ---------------------------------------------------------------------------- #
@@ -459,7 +516,8 @@ class FileIOTXT(FileIOStrategy):
 # ---------------------------------------------------------------------------- #
 class FileIO:
     """Context class sets IO strategy and performs IO operations ."""
-    _FILE_HANDLERS = {'.gz': FileIOCSVgz(), '.csv': FileIOCSV()}
+    _FILE_HANDLERS = {'.gz': FileIOCSVgz(), '.csv': FileIOCSV(),
+                      '.xlsx': FileIOExcel()}
 
     def __init__(self):
         pass

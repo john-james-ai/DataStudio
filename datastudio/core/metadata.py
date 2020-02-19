@@ -41,6 +41,7 @@ TODO: Create factorys for supported RDBMS DataSource objects.
 from abc import ABC, abstractmethod, abstractproperty
 import os
 from datetime import datetime
+from collections import OrderedDict
 import platform
 from pprint import pprint
 import psutil
@@ -48,9 +49,6 @@ import sys
 import time
 import uuid
 
-from datastudio.core.data import DataSet, DataCollection
-from datastudio.core.data import DataStoreFile, DataStoreRDBMS
-from datastudio.core.data import DataSourceFile, DataSourceRDBMS
 from ..utils.format import scale_number
 # --------------------------------------------------------------------------- #
 #                                 Metadata                                    #
@@ -110,6 +108,7 @@ class AbstractMetadataFactory(ABC):
     def __init__(self, entity, name, **kwargs):
         self._entity = entity
         self._name = name
+        self._addl_params = {}
         self._addl_params.update(kwargs)
         self._reset()
 
@@ -122,10 +121,6 @@ class AbstractMetadataFactory(ABC):
         metadata = self._metadata
         self._reset()
         return metadata             
-
-    @abstractproperty
-    def metadata(self):
-        pass
 
     @abstractmethod
     def create_admin(self):
@@ -156,22 +151,22 @@ class MetadataDataSetFactory(AbstractMetadataFactory):
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
-        admin = MetadataAdmin(self._entity, self._name, self._addl_params)
+        admin = MetadataAdmin(self._entity, self._name, **self._addl_params)
         self._metadata.add(admin)
 
     def create_desc(self):
         """Adds a descriptive metadata subclass object."""
-        desc = MetadataDesc(self._entity, self._name, self._addl_params)
+        desc = MetadataDesc(self._entity, self._name, **self._addl_params)
         self._metadata.add(desc)
 
     def create_tech(self):
         """Adds a tech metadata subclass object."""
-        tech = MetadataTech(self._entity, self._name, self._addl_params)
+        tech = MetadataTech(self._entity, self._name, **self._addl_params)
         self._metadata.add(tech)
 
     def create_process(self):
         """Adds a process metadata subclass object."""
-        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        process = MetadataProcess(self._entity, self._name, **self._addl_params)
         self._metadata.add(process)
 
 
@@ -187,22 +182,22 @@ class MetadataDataCollectionFactory(AbstractMetadataFactory):
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
-        admin = MetadataAdmin(self._entity, self._name, self._addl_params)
+        admin = MetadataAdmin(self._entity, self._name, **self._addl_params)
         self._metadata.add(admin)
 
     def create_desc(self):
         """Adds a descriptive metadata subclass object."""
-        desc = MetadataDescDataCollection(self._entity, self._name, self._addl_params)
+        desc = MetadataDescDataCollection(self._entity, self._name, **self._addl_params)
         self._metadata.add(desc)
 
     def create_tech(self):
         """Adds a tech metadata subclass object."""
-        tech = MetadataTech(self._entity, self._name, self._addl_params)
+        tech = MetadataTech(self._entity, self._name, **self._addl_params)
         self._metadata.add(tech)
 
     def create_process(self):
         """Adds a process metadata subclass object."""
-        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        process = MetadataProcess(self._entity, self._name, **self._addl_params)
         self._metadata.add(process)
 
 
@@ -214,26 +209,26 @@ class MetadataFileFactory(AbstractMetadataFactory):
 
     def __init__(self, entity, name, **kwargs):        
         """ Fresh creator object should contain an empty Metadata object."""
-        super(MetadataFileFactory, self).__init__(entity, name, kwargs)
+        super(MetadataFileFactory, self).__init__(entity, name, **kwargs)
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
-        admin = MetadataAdminFile(self._entity, self._name, self._addl_params)
+        admin = MetadataAdminFile(self._entity, self._name, **self._addl_params)
         self._metadata.add(admin)
 
     def create_desc(self):
         """Adds a descriptive metadata subclass object."""
-        desc = MetadataDesc(self._entity, self._name, self._addl_params)
+        desc = MetadataDesc(self._entity, self._name, **self._addl_params)
         self._metadata.add(desc)
 
     def create_tech(self):
         """Adds a tech metadata subclass object."""
-        tech = MetadataTechFile(self._entity, self._name, self._addl_params)
+        tech = MetadataTechFile(self._entity, self._name, **self._addl_params)
         self._metadata.add(tech)
 
     def create_process(self):
         """Adds a process metadata subclass object."""
-        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        process = MetadataProcess(self._entity, self._name, **self._addl_params)
         self._metadata.add(process)
 
 # --------------------------------------------------------------------------- #
@@ -248,22 +243,22 @@ class MetadataRDBMSFactory(AbstractMetadataFactory):
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
-        admin = MetadataAdmin(self._entity, self._name, self._addl_params)
+        admin = MetadataAdmin(self._entity, self._name, **self._addl_params)
         self._metadata.add(admin)
 
     def create_desc(self):
         """Adds a descriptive metadata subclass object."""
-        desc = MetadataDesc(self._entity, self._name, self._addl_params)
+        desc = MetadataDesc(self._entity, self._name, **self._addl_params)
         self._metadata.add(desc)
 
     def create_tech(self):
         """Adds a tech metadata subclass object."""
-        tech = MetadataTechRDBMS(self._entity, self._name, self._addl_params)
+        tech = MetadataTechRDBMS(self._entity, self._name, **self._addl_params)
         self._metadata.add(tech)
 
     def create_process(self):
         """Adds a process metadata subclass object."""
-        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        process = MetadataProcess(self._entity, self._name, **self._addl_params)
         self._metadata.add(process)
 
 # --------------------------------------------------------------------------- #
@@ -290,54 +285,23 @@ class MetadataRemoteFactory(AbstractMetadataFactory):
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
-        admin = MetadataAdminURL(self._entity, self._name, self._addl_params)
+        admin = MetadataAdminURL(self._entity, self._name, **self._addl_params)
         self._metadata.add(admin)
 
     def create_desc(self):
         """Adds a descriptive metadata subclass object."""
-        desc = MetadataDesc(self._entity, self._name, self._addl_params)
+        desc = MetadataDesc(self._entity, self._name, **self._addl_params)
         self._metadata.add(desc)
 
     def create_tech(self):
         """Adds a tech metadata subclass object."""
-        tech = MetadataTech(self._entity, self._name, self._addl_params)
+        tech = MetadataTech(self._entity, self._name, **self._addl_params)
         self._metadata.add(tech)
 
     def create_process(self):
         """Adds a process metadata subclass object."""
-        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        process = MetadataProcess(self._entity, self._name, **self._addl_params)
         self._metadata.add(process)        
-# --------------------------------------------------------------------------- #
-#                       MetadataFactoryDirector                               #
-# --------------------------------------------------------------------------- #
-class MetadataFactoryDirector:
-    """Encapsulates the steps required to construct the Metadata class."""
-
-    _factories = {'DataSet': MetadataDataSetFactory, 
-                  'DataCollection': MetadataDataCollectionFactory,
-                  'DataStoreFile': MetadataFileFactory}
-
-    def __init__(self, entity, name, **kwargs):
-        self._entity = entity
-        self._name = name
-        self._factory = self._factories[entity.__class__.__name__](entity, name, **kwargs)
-
-    @property
-    def factory(self):
-        return self._factory
-
-    @factory.setter
-    def factory(self, entity):
-        """Constructs the Metadata object associated with the factory instance.""" 
-        self._factory = self._factories[entity.__class__.__name__](self._entity, self._name)
-
-    def create(self):
-        """Constructs Metadata object using factory."""
-        self._factory.create_admin() 
-        self._factory.create_desc() 
-        self._factory.create_tech() 
-        self._factory.create_process() 
-        return self._factory.metadata
 
 # --------------------------------------------------------------------------- #
 #                           AbstractMetadata                                  #
@@ -347,7 +311,7 @@ class AbstractMetadata(ABC):
 
     def __init__(self, entity, name, **kwargs):
         self._entity = entity
-        self._metadata = {}
+        self._metadata = OrderedDict() 
         self._metadata['name'] = name    
         self._metadata['updates'] = 0
 
@@ -397,7 +361,7 @@ class MetadataAdmin(AbstractMetadata):
     """Abstract base class for all administrative metadata objects."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataAdmin, self).__init__(entity, name, kwargs)
+        super(MetadataAdmin, self).__init__(entity, name, **kwargs)
         self.metadata_type = 'Administrative'
 
         # Extract user datetime and object data once to avoid repeated calls.
@@ -428,12 +392,12 @@ class MetadataAdmin(AbstractMetadata):
 # --------------------------------------------------------------------------- #
 #                          MetadataAdminFile                                  #
 # --------------------------------------------------------------------------- #
-class MetadataAdminFile(MetaDataAdmin):        
+class MetadataAdminFile(MetadataAdmin):        
     """Administrative metadata for DataSourceFile and DataStorageFile objects."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataAdminFile, self).__init__(entity, name, kwargs)       
-        path = kwargs.get('path', None)        
+        super(MetadataAdminFile, self).__init__(entity, name, **kwargs)       
+        path = kwargs.get('path', None)                
         if path:
             self._metadata['path'] = path
             self._metadata['directory'] = os.path.dirname(path)
@@ -451,13 +415,13 @@ class MetadataAdminFile(MetaDataAdmin):
 # --------------------------------------------------------------------------- #
 #                          MetadataAdminURL                                   #
 # --------------------------------------------------------------------------- #
-class MetadataAdminURL(MetaDataAdmin):  
+class MetadataAdminURL(MetadataAdmin):  
     """Metadata for remote data sources."""
 
     _params = ['url']
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataAdminURL, self).__init__(entity, name, kwargs)      
+        super(MetadataAdminURL, self).__init__(entity, name, **kwargs)      
         url = dict(filter(lambda item: 'url' in item[0], self._metadata.items()))        
         self._metadata.update(url)
     
@@ -468,7 +432,7 @@ class MetadataDesc(AbstractMetadata):
     """ Storage and management of descriptive metadata."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataDesc, self).__init__(entity, name, kwargs)
+        super(MetadataDesc, self).__init__(entity, name, **kwargs)
         self.metadata_type = 'Descriptive'
 
         self._metadata['description'] = ""
@@ -478,35 +442,30 @@ class MetadataDesc(AbstractMetadata):
 # --------------------------------------------------------------------------- #
 #                          MetadataDescDataCollection                         #
 # --------------------------------------------------------------------------- #
-class MetadataDescDataCollection(MetaDataDesc):  
+class MetadataDescDataCollection(MetadataDesc):  
     """Metadata for DataCollection objects."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataAdminURL, self).__init__(entity, name, kwargs)      
-        self._metadata.update(self._reset())
+        super(MetadataAdminURL, self).__init__(entity, name, **kwargs)      
+        self._reset()
+
 
     def _reset(self):
-        return {'n_member':0, 'n_members_datacollection': 0, 'n_members_dataset': 0,
-                 'members' : [], 'members_datacollection': [], 'members_dataset' : []}
-
-
-    def update(self, event=None):      
         self._metadata['n_members'] = 0
         self._metadata['n_members_datacollection'] = 0
         self._metadata['n_members_dataset'] = 0
-        self._metadata['members'] = []
-        self._metadata['members_datacollection'] = []
-        self._metadata['members_dataset'] = []  
+
+
+    def update(self, event=None):      
+        """Updates collection counts.""" 
+        self._reset()
         
         for k, v in self._entity.get().items():
             self._metadata['n_members'] += 1
-            self._metadata['members'].append(v.name)
-            if isinstance(v, DataCollection):
+            if v.__class__.__name__ == 'DataCollection':            
                 self._metadata['n_members_datacollection'] += 1
-                self._metadata['members_datacollection'].append(v.name)
             else:
                 self._metadata['n_members_dataset'] += 1
-                self._metadata['members_dataset'].append(v.name)
         
 
 # --------------------------------------------------------------------------- #
@@ -516,7 +475,7 @@ class MetadataTech(AbstractMetadata):
     """ Storage and management of tech metadata."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataTech, self).__init__(entity, name)
+        super(MetadataTech, self).__init__(entity, name, **kwargs)
         self.metadata_type = 'Technical'
 
         self._format_metadata()        
@@ -531,7 +490,7 @@ class MetadataTech(AbstractMetadata):
         uname = platform.uname()
         svmem = psutil.virtual_memory()
 
-        self._metadata['tech'] = uname.tech
+        self._metadata['system'] = uname.system
         self._metadata['node'] = uname.node
         self._metadata['release'] = uname.release
         self._metadata['version'] = uname.version
@@ -554,7 +513,7 @@ class MetadataTechFile(MetadataTech):
     """ Additional metadata for DataSourceFile and DataStoreFile classes."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataTechFile, self).__init__(entity, name, kwargs) 
+        super(MetadataTechFile, self).__init__(entity, name, **kwargs) 
         path = kwargs.get('path', None)        
         if path:        
             self._metadata['file_size'] = scale_number(os.path.getsize(path), "M")         
@@ -562,13 +521,13 @@ class MetadataTechFile(MetadataTech):
 # --------------------------------------------------------------------------- #
 #                          MetadataTechRDBMS                                  #
 # --------------------------------------------------------------------------- #
-class MetadataTechRDBMS(MetaDataTech):        
+class MetadataTechRDBMS(MetadataTech):        
     """Technical metadata for RDBMS sources and storage objects."""
 
     _params = ['database', 'user', 'password', 'host', 'port']
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataTechRDBMS, self).__init__(entity, name, kwargs)       
+        super(MetadataTechRDBMS, self).__init__(entity, name, **kwargs)       
         rdbms_params = dict(filter(lambda item: item[0] in self._params, kwargs.items()))                
         self._metadata.update(rdbms_params)
    
@@ -580,7 +539,7 @@ class MetadataProcess(AbstractMetadata):
     """ Storage and management of process metadata."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataProcess, self).__init__(entity, name)
+        super(MetadataProcess, self).__init__(entity, name, **kwargs)
         self.metadata_type = 'Process'      
 
         self._metadata['log'] = []
