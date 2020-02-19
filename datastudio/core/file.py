@@ -64,6 +64,7 @@ class File:
         self._exists = os.path.exists(path)    
         self._filename =  os.path.basename(path)
         self._fileext = os.path.splitext(path)[1]
+        self._io = FileIO()
 
     @property
     def name(self):
@@ -201,9 +202,8 @@ class File:
         
             Support for additional formats will be added as needed.
 
-        """
-        io = FileIOStrategy()
-        return io.read(self._path, filter)
+        """        
+        return self._io.read(self._path, filter)
 
     def write(self, content):
         """Writes content to file.
@@ -220,15 +220,14 @@ class File:
         JSON                .json
 
         """
-        if self._is_unlocked(self._path, 'write'):
-            io = FileIOStrategy()
-            io.write(self._path, content)
+        if self._is_unlocked(self._path, 'write'):            
+            self._io.write(self._path, content)
 
 
 # ---------------------------------------------------------------------------- #
-#                                 FileIO                                       #  
+#                            FileIOStrategy                                    #  
 # ---------------------------------------------------------------------------- #
-class FileIO:
+class FileIOStrategy(ABC):
     """Abstract base class for FileIO subclasses."""
 
     @abstractmethod
@@ -264,7 +263,7 @@ class FileIO:
 # ---------------------------------------------------------------------------- #
 #                               FilEIOCSVgz                                    #  
 # ---------------------------------------------------------------------------- #
-class FileIOCSVgz(FileIO):
+class FileIOCSVgz(FileIOStrategy):
     """Read and write .gz compressed CSV files into and from DataFrame objects."""
 
     def read(self, path, filter=None):
@@ -326,7 +325,7 @@ class FileIOCSVgz(FileIO):
 # ---------------------------------------------------------------------------- #
 #                               FileIOCSV                                      #  
 # ---------------------------------------------------------------------------- #
-class FileIOCSV(FileIO):
+class FileIOCSV(FileIOStrategy):
     """Read and write CSV files and returning DataFrames."""
 
     def read(self, path, filter=None):
@@ -386,7 +385,7 @@ class FileIOCSV(FileIO):
 # ---------------------------------------------------------------------------- #
 #                               FileIOTXT                                      #  
 # ---------------------------------------------------------------------------- #
-class FileIOTXT(FileIO):
+class FileIOTXT(FileIOStrategy):
     """Read and write TXT files, returning strings."""
 
     def read(self, path, filter=None):
@@ -456,10 +455,10 @@ class FileIOTXT(FileIO):
 
 
 # ---------------------------------------------------------------------------- #
-#                                FILEIO STRATEGY                               #   
+#                                  FILEIO                                      #     
 # ---------------------------------------------------------------------------- #
-class FileIOStrategy:
-    """Encapsulates an individual file on disk."""
+class FileIO:
+    """Context class sets IO strategy and performs IO operations ."""
     _FILE_HANDLERS = {'.gz': FileIOCSVgz(), '.csv': FileIOCSV()}
 
     def __init__(self):

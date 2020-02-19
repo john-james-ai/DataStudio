@@ -25,43 +25,44 @@ import pytest
 from pytest import mark
 import time
 
-from datastudio.core.metadata import Metadata, MetadataBuilder, MetadataDirector
-from datastudio.core.metadata import MetadataAdmin, MetadataDesc, MetadataTech
+from datastudio.core.metadata import Metadata, DataSetMetadataBuilder
+from datastudio.core.metadata import MetadataDirector
+from datastudio.core.metadata import MetadataAdmin, MetadataDesc, MetadataSystem
 from datastudio.core.metadata import MetadataProcess
 class MetaDataTests:
   
 
     @mark.metadata
-    def test_metadata_build(self):
+    def test_dataset_metadata_build(self):
 
-        print("\n\nMetadata Object")
+        print("\n\nDataset Metadata Object")
         print("="*40)
         director = MetadataDirector()
-        builder = MetadataBuilder(self, name='test_object')
+        builder = DataSetMetadataBuilder(self, name='test_object')
         director.builder = builder
         director.build()
         metadata = builder.metadata
         metadata.print_types()
 
-        print("\n\nMetadata Administrative")
+        print("\n\nDataset Metadata Administrative")
         print("-"*40)
         admin = metadata.get('admin')    
         admin.print()
         assert isinstance(admin, MetadataAdmin), "MetadataAdmin not built."
         
-        print("\n\nMetadata Descriptive")
+        print("\n\nDataset Metadata Descriptive")
         print("-"*40)
         desc = metadata.get('desc')                
         desc.print()
         assert isinstance(desc, MetadataDesc), "MetadataDesc not built."
 
-        print("\n\nMetadata Technical")
+        print("\n\nDataset Metadata System")
         print("-"*40)
-        tech = metadata.get('tech')                
-        tech.print()
-        assert isinstance(tech, MetadataTech), "MetadataTech not built."
+        system = metadata.get('system')                
+        system.print()
+        assert isinstance(system, MetadataSystem), "MetadataSystem not built."
 
-        print("\n\nMetadata Process")
+        print("\n\Dataset nMetadata Process")
         print("-"*40)
         process = metadata.get('process')                
         process.print()
@@ -72,7 +73,7 @@ class MetaDataTests:
 
     @mark.metadata
     def test_metadata_admin(self, get_metadata):
-        print("\n\nMetadata Administrative Test")
+        print("\n\n DataSet Metadata Administrative Test")
         print("-"*40)        
         metadata = get_metadata
         admin = metadata.get('admin')
@@ -93,7 +94,7 @@ class MetaDataTests:
         
     @mark.metadata
     def test_metadata_desc(self, get_metadata):
-        print("\nMetadata Descriptive Test")
+        print("\n DataSet Metadata Descriptive Test")
         print("-"*40)        
         metadata = get_metadata
         desc = metadata.get('desc')
@@ -113,25 +114,25 @@ class MetaDataTests:
         assert isinstance(desc.get(), dict), "Get error, failed to return all desc metadata"
 
     @mark.metadata
-    def test_metadata_tech(self, get_metadata):
-        print("\nMetadata Technical Test")
+    def test_metadata_system(self, get_metadata):
+        print("\n DataSet Metadata System Test")
         print("-"*40)        
         metadata = get_metadata
-        tech = metadata.get('tech')
-        tech.update()
-        assert tech.get('updates') == 1, "Admin updates not correct."
-        tech.add(key='artist', value='BOC')
-        assert tech.get('artist') == 'BOC', "Admin get error."
+        system = metadata.get('system')
+        system.update()
+        assert system.get('updates') == 1, "Admin updates not correct."
+        system.add(key='artist', value='BOC')
+        assert system.get('artist') == 'BOC', "Admin get error."
         with pytest.raises(ValueError):        
-            tech.add(key='artist', value='dunno')
+            system.add(key='artist', value='dunno')
         with pytest.raises(KeyError):        
-            tech.change(key='cook', value='BOC')
-        tech.change(key='artist', value='air')
-        assert tech.get('artist') == 'air', "Admin change error."
-        tech.remove(key='artist')
+            system.change(key='cook', value='BOC')
+        system.change(key='artist', value='air')
+        assert system.get('artist') == 'air', "Admin change error."
+        system.remove(key='artist')
         with pytest.raises(KeyError):        
-            assert tech.get('artist') == 'air', "Admin remove failed to raise Keyerror."
-        assert isinstance(tech.get(), dict), "Get error, failed to return all tech metadata"
+            assert system.get('artist') == 'air', "Admin remove failed to raise Keyerror."
+        assert isinstance(system.get(), dict), "Get error, failed to return all system metadata"
 
         
                

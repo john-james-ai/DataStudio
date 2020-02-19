@@ -18,21 +18,24 @@
 # License : BSD                                                               #
 # Copyright (c) 2020 DecisionScients                                          #
 # =========================================================================== #
-""" Management of administrative, descriptive, technical and process metadata.
+""" Management of administrative, descriptive, tech and process metadata.
 
 This module encapsulates the creation, management, and reporting of 
-administrative, descriptive, technical and process metadata, hereinafter
+administrative, descriptive, tech and process metadata, hereinafter
 called the metadata taxonomy. The classes include:
 
-    * Metadata : Main class containing the metadata taxonomy objects.
-    * MetadataBuilder : Class responsible for constructing the Metadata class.
-    * AbstractMetadataBuilder : Interface for the MetadataBuilder class
+    * Metadata : Main class containing the metadata taxonomy objects.    
+    * AbstractMetadataFactory : Interface for the MetadataFactory class
+    * DataSetMetadataFactory : Constructs the DataSet MetaData object.
+    * DataSourceFileMetadataFactory : DataSourceFile Metadata    
     * AbstractMetadata : Interace for metadata taxonomy classes.
     * MetadataAdmin : Data and behaviors for administrative metadata
     * MetadataDesc : Data and behaviors for descriptive metadata
-    * MetadataTech : Data and behaviors for technical metadata
+    * MetadataTech : Data and behaviors for tech metadata
+    * MetadataDatabase : Data and behaviors for database metadata
     * MetadataProcess : Data and behaviors for process metadata
 
+TODO: Create factorys for supported RDBMS DataSource objects.
 
 """
 from abc import ABC, abstractmethod, abstractproperty
@@ -45,12 +48,15 @@ import sys
 import time
 import uuid
 
+from datastudio.core.data import DataSet, DataCollection
+from datastudio.core.data import DataStoreFile, DataStoreRDBMS
+from datastudio.core.data import DataSourceFile, DataSourceRDBMS
 from ..utils.format import scale_number
 # --------------------------------------------------------------------------- #
 #                                 Metadata                                    #
 # --------------------------------------------------------------------------- #
 class Metadata:
-    """ Class containing administrative, descriptive, and technical metadata."""
+    """ Class containing administrative, descriptive, and tech metadata."""
 
     def __init__(self):
         self._metadata = {}
@@ -62,28 +68,28 @@ class Metadata:
         ----------
         metadata : A MetadataAdmin, MetadataDesc, or MetadataTech object        
         """      
-        self._metadata[metadata.metadata_type] = metadata
+        self._metadata[metadata.metadata_type.lower()] = metadata
 
     def get(self, metadata_type=None):
         """ Returns a metadata object.
 
-        Returns the administrative, descriptive, or technical metadata object
-        based upon a partial match of the metadata_type parameter.  
+        Returns the administrative, descriptive, technical or process metadata 
+        object based upon a partial match of the metadata_type parameter.  
 
         Parameters
         ----------
         metadata_type : str
             String or partial string containing the type of metadata.
         """
-        metadata = [value for key, value in self._metadata.items() \
-            if metadata_type.lower() in key.lower()]        
+        metadata = next(v for (k, v) in self._metadata.items() if \
+            metadata_type.lower() in k.lower())
         
         if len(metadata) == 0:
             raise KeyError("No metadata type matching '{t}'. \
                 Run the 'print_types' method for a list of supported \
                     metadata types.".format(t=metadata_type))
         else:
-            return metadata[0]
+            return metadata
 
     def print_types(self):
         for k in self._metadata.keys():
@@ -96,41 +102,178 @@ class Metadata:
 
 
 # --------------------------------------------------------------------------- #
-#                          AbstractMetadataBuilder                            #
+#                          AbstractMetadataFactory                            #
 # --------------------------------------------------------------------------- #
-class AbstractMetadataBuilder(ABC):
+class AbstractMetadataFactory(ABC):
     """Abstract base class exposing methods for creating the Metadata objects."""
+
+    def __init__(self, entity, name, **kwargs):
+        self._entity = entity
+        self._name = name
+        self._addl_params.update(kwargs)
+        self._reset()
+
+    def _reset(self):
+        self._metadata = Metadata()   
+
+    @property
+    def metadata(self):
+        """ Returns the metadata object once completed."""
+        metadata = self._metadata
+        self._reset()
+        return metadata             
 
     @abstractproperty
     def metadata(self):
         pass
 
     @abstractmethod
-    def build_admin(self):
+    def create_admin(self):
         pass
 
     @abstractmethod
-    def build_desc(self):
+    def create_desc(self):
         pass
 
     @abstractmethod
-    def build_tech(self):
+    def create_tech(self):
+        pass
+
+    @abstractmethod
+    def create_process(self):
         pass
 
 
 # --------------------------------------------------------------------------- #
-#                            MetadataBuilder                                  #
+#                        MetadataDataSetFactory                               #
 # --------------------------------------------------------------------------- #
-class MetadataBuilder:
-    """ Builds a Metadata object containing admin, descriptive and tech metadata.
+class MetadataDataSetFactory(AbstractMetadataFactory):
+    """ Builds a Metadata object for DataSet objects."""
 
-    Implements the AbstractMetadataBuilder interface and provides specific
-    implementation steps to build the Metadata object.
-    
-    """
+    def __init__(self, entity, name, **kwargs):        
+        """ Fresh creator object should contain an empty Metadata object."""
+        super(MetadataDataSetFactory, self).__init__(entity, name, kwargs)
+
+    def create_admin(self):
+        """Adds a administrative metadata subclass object."""
+        admin = MetadataAdmin(self._entity, self._name, self._addl_params)
+        self._metadata.add(admin)
+
+    def create_desc(self):
+        """Adds a descriptive metadata subclass object."""
+        desc = MetadataDesc(self._entity, self._name, self._addl_params)
+        self._metadata.add(desc)
+
+    def create_tech(self):
+        """Adds a tech metadata subclass object."""
+        tech = MetadataTech(self._entity, self._name, self._addl_params)
+        self._metadata.add(tech)
+
+    def create_process(self):
+        """Adds a process metadata subclass object."""
+        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        self._metadata.add(process)
+
+
+# --------------------------------------------------------------------------- #
+#                       MetadataDataCollectionFactory                         #
+# --------------------------------------------------------------------------- #
+class MetadataDataCollectionFactory(AbstractMetadataFactory):
+    """ Builds a Metadata object for DataCollection objects."""
+
+    def __init__(self, entity, name, **kwargs):        
+        """ Fresh creator object should contain an empty Metadata object."""
+        super(MetadataDataCollectionFactory, self).__init__(entity, name, kwargs)
+
+    def create_admin(self):
+        """Adds a administrative metadata subclass object."""
+        admin = MetadataAdmin(self._entity, self._name, self._addl_params)
+        self._metadata.add(admin)
+
+    def create_desc(self):
+        """Adds a descriptive metadata subclass object."""
+        desc = MetadataDescDataCollection(self._entity, self._name, self._addl_params)
+        self._metadata.add(desc)
+
+    def create_tech(self):
+        """Adds a tech metadata subclass object."""
+        tech = MetadataTech(self._entity, self._name, self._addl_params)
+        self._metadata.add(tech)
+
+    def create_process(self):
+        """Adds a process metadata subclass object."""
+        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        self._metadata.add(process)
+
+
+# --------------------------------------------------------------------------- #
+#                          MetadataFileFactory                                #
+# --------------------------------------------------------------------------- #
+class MetadataFileFactory(AbstractMetadataFactory):
+    """ Builds a Metadata object for DataSourceFile objects."""
+
+    def __init__(self, entity, name, **kwargs):        
+        """ Fresh creator object should contain an empty Metadata object."""
+        super(MetadataFileFactory, self).__init__(entity, name, kwargs)
+
+    def create_admin(self):
+        """Adds a administrative metadata subclass object."""
+        admin = MetadataAdminFile(self._entity, self._name, self._addl_params)
+        self._metadata.add(admin)
+
+    def create_desc(self):
+        """Adds a descriptive metadata subclass object."""
+        desc = MetadataDesc(self._entity, self._name, self._addl_params)
+        self._metadata.add(desc)
+
+    def create_tech(self):
+        """Adds a tech metadata subclass object."""
+        tech = MetadataTechFile(self._entity, self._name, self._addl_params)
+        self._metadata.add(tech)
+
+    def create_process(self):
+        """Adds a process metadata subclass object."""
+        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        self._metadata.add(process)
+
+# --------------------------------------------------------------------------- #
+#                           MetadataRDBMSFactory                              #
+# --------------------------------------------------------------------------- #
+class MetadataRDBMSFactory(AbstractMetadataFactory):
+    """ Builds a Metadata object for RDBMS based DataSource and DataStore objects."""
+
+    def __init__(self, entity, name, **kwargs):        
+        """ Fresh creator object should contain an empty Metadata object."""
+        super(MetadataRDBMSFactory, self).__init__(entity, name, kwargs)
+
+    def create_admin(self):
+        """Adds a administrative metadata subclass object."""
+        admin = MetadataAdmin(self._entity, self._name, self._addl_params)
+        self._metadata.add(admin)
+
+    def create_desc(self):
+        """Adds a descriptive metadata subclass object."""
+        desc = MetadataDesc(self._entity, self._name, self._addl_params)
+        self._metadata.add(desc)
+
+    def create_tech(self):
+        """Adds a tech metadata subclass object."""
+        tech = MetadataTechRDBMS(self._entity, self._name, self._addl_params)
+        self._metadata.add(tech)
+
+    def create_process(self):
+        """Adds a process metadata subclass object."""
+        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        self._metadata.add(process)
+
+# --------------------------------------------------------------------------- #
+#                           MetadataRemoteFactory                             #
+# --------------------------------------------------------------------------- #
+class MetadataRemoteFactory(AbstractMetadataFactory):
+    """ Builds a Metadata object for DataSourceDB and DataStorageDB objects."""
 
     def __init__(self, entity, name):        
-        """ Fresh builder object should contain an empty Metadata object."""
+        """ Fresh creator object should contain an empty Metadata object."""
         self._entity = entity
         self._name = name
         self._reset()
@@ -145,58 +288,64 @@ class MetadataBuilder:
         self._reset()
         return metadata
 
-    def build_admin(self):
+    def create_admin(self):
         """Adds a administrative metadata subclass object."""
-        admin = MetadataAdmin(self._entity, self._name)
+        admin = MetadataAdminURL(self._entity, self._name, self._addl_params)
         self._metadata.add(admin)
 
-    def build_desc(self):
+    def create_desc(self):
         """Adds a descriptive metadata subclass object."""
-        desc = MetadataDesc(self._entity, self._name)
+        desc = MetadataDesc(self._entity, self._name, self._addl_params)
         self._metadata.add(desc)
 
-    def build_tech(self):
-        """Adds a technical metadata subclass object."""
-        tech = MetadataTech(self._entity, self._name)
+    def create_tech(self):
+        """Adds a tech metadata subclass object."""
+        tech = MetadataTech(self._entity, self._name, self._addl_params)
         self._metadata.add(tech)
 
-    def build_process(self):
+    def create_process(self):
         """Adds a process metadata subclass object."""
-        process = MetadataProcess(self._entity, self._name)
-        self._metadata.add(process)
-
+        process = MetadataProcess(self._entity, self._name, self._addl_params)
+        self._metadata.add(process)        
 # --------------------------------------------------------------------------- #
-#                            MetadataDirector                                 #
+#                       MetadataFactoryDirector                               #
 # --------------------------------------------------------------------------- #
-class MetadataDirector:
+class MetadataFactoryDirector:
     """Encapsulates the steps required to construct the Metadata class."""
 
-    def __init__(self):
-        self._builder = None
+    _factories = {'DataSet': MetadataDataSetFactory, 
+                  'DataCollection': MetadataDataCollectionFactory,
+                  'DataStoreFile': MetadataFileFactory}
+
+    def __init__(self, entity, name, **kwargs):
+        self._entity = entity
+        self._name = name
+        self._factory = self._factories[entity.__class__.__name__](entity, name, **kwargs)
 
     @property
-    def builder(self):
-        return self._builder
+    def factory(self):
+        return self._factory
 
-    @builder.setter
-    def builder(self, builder):
-        """Constructs the Metadata object associated with the builder instance.""" 
-        self._builder = builder
+    @factory.setter
+    def factory(self, entity):
+        """Constructs the Metadata object associated with the factory instance.""" 
+        self._factory = self._factories[entity.__class__.__name__](self._entity, self._name)
 
-    def build(self):
-        """Constructs Metadata object using builder."""
-        self._builder.build_admin() 
-        self._builder.build_desc() 
-        self._builder.build_tech() 
-        self._builder.build_process() 
+    def create(self):
+        """Constructs Metadata object using factory."""
+        self._factory.create_admin() 
+        self._factory.create_desc() 
+        self._factory.create_tech() 
+        self._factory.create_process() 
+        return self._factory.metadata
 
 # --------------------------------------------------------------------------- #
 #                           AbstractMetadata                                  #
 # --------------------------------------------------------------------------- #
 class AbstractMetadata(ABC):
-    """ Abstract base class for adminstrative, descriptive, & technical metadata.""" 
+    """ Abstract base class for adminstrative, descriptive, & tech metadata.""" 
 
-    def __init__(self, entity, name):
+    def __init__(self, entity, name, **kwargs):
         self._entity = entity
         self._metadata = {}
         self._metadata['name'] = name    
@@ -245,10 +394,10 @@ class AbstractMetadata(ABC):
 #                            MetadataAdmin                                    #
 # --------------------------------------------------------------------------- #
 class MetadataAdmin(AbstractMetadata):
-    """Concrete administrative metadata object."""
+    """Abstract base class for all administrative metadata objects."""
 
-    def __init__(self, entity, name):
-        super(MetadataAdmin, self).__init__(entity, name)
+    def __init__(self, entity, name, **kwargs):
+        super(MetadataAdmin, self).__init__(entity, name, kwargs)
         self.metadata_type = 'Administrative'
 
         # Extract user datetime and object data once to avoid repeated calls.
@@ -277,54 +426,112 @@ class MetadataAdmin(AbstractMetadata):
         self._metadata['modified'] = time.strftime("%c")
 
 # --------------------------------------------------------------------------- #
+#                          MetadataAdminFile                                  #
+# --------------------------------------------------------------------------- #
+class MetadataAdminFile(MetaDataAdmin):        
+    """Administrative metadata for DataSourceFile and DataStorageFile objects."""
+
+    def __init__(self, entity, name, **kwargs):
+        super(MetadataAdminFile, self).__init__(entity, name, kwargs)       
+        path = kwargs.get('path', None)        
+        if path:
+            self._metadata['path'] = path
+            self._metadata['directory'] = os.path.dirname(path)
+            self._metadata['filename'] = os.path.basename(path)
+            self._metadata['fileext'] = os.path.splitext(path)[1]
+            self._metadata['file_exists'] = os.path.exists(path)
+            self._metadata['file_created'] = time.strftime("%c", \
+                time.localtime(os.path.getctime(path)))
+            self._metadata['file_last_accessed'] = time.strftime("%c", \
+                time.localtime(os.path.getatime(path)))                
+            self._metadata['file_last_modified'] = time.strftime("%c", \
+                time.localtime(os.path.getmtime(path)))                           
+
+
+# --------------------------------------------------------------------------- #
+#                          MetadataAdminURL                                   #
+# --------------------------------------------------------------------------- #
+class MetadataAdminURL(MetaDataAdmin):  
+    """Metadata for remote data sources."""
+
+    _params = ['url']
+
+    def __init__(self, entity, name, **kwargs):
+        super(MetadataAdminURL, self).__init__(entity, name, kwargs)      
+        url = dict(filter(lambda item: 'url' in item[0], self._metadata.items()))        
+        self._metadata.update(url)
+    
+# --------------------------------------------------------------------------- #
 #                              MetadataDesc                                   #
 # --------------------------------------------------------------------------- #
 class MetadataDesc(AbstractMetadata):
     """ Storage and management of descriptive metadata."""
 
-    def __init__(self, entity, name):
-        super(MetadataDesc, self).__init__(entity, name)
+    def __init__(self, entity, name, **kwargs):
+        super(MetadataDesc, self).__init__(entity, name, kwargs)
         self.metadata_type = 'Descriptive'
 
         self._metadata['description'] = ""
         self._metadata['class'] = entity.__class__.__name__
         self._metadata['version'] = "0.1.0"
+       
+# --------------------------------------------------------------------------- #
+#                          MetadataDescDataCollection                         #
+# --------------------------------------------------------------------------- #
+class MetadataDescDataCollection(MetaDataDesc):  
+    """Metadata for DataCollection objects."""
+
+    def __init__(self, entity, name, **kwargs):
+        super(MetadataAdminURL, self).__init__(entity, name, kwargs)      
+        self._metadata.update(self._reset())
+
+    def _reset(self):
+        return {'n_member':0, 'n_members_datacollection': 0, 'n_members_dataset': 0,
+                 'members' : [], 'members_datacollection': [], 'members_dataset' : []}
+
+
+    def update(self, event=None):      
+        self._metadata['n_members'] = 0
+        self._metadata['n_members_datacollection'] = 0
+        self._metadata['n_members_dataset'] = 0
+        self._metadata['members'] = []
+        self._metadata['members_datacollection'] = []
+        self._metadata['members_dataset'] = []  
         
+        for k, v in self._entity.get().items():
+            self._metadata['n_members'] += 1
+            self._metadata['members'].append(v.name)
+            if isinstance(v, DataCollection):
+                self._metadata['n_members_datacollection'] += 1
+                self._metadata['members_datacollection'].append(v.name)
+            else:
+                self._metadata['n_members_dataset'] += 1
+                self._metadata['members_dataset'].append(v.name)
+        
+
 # --------------------------------------------------------------------------- #
 #                              MetadataTech                                   #
 # --------------------------------------------------------------------------- #
 class MetadataTech(AbstractMetadata):
-    """ Storage and management of technical metadata."""
+    """ Storage and management of tech metadata."""
 
-    def __init__(self, entity, name):
+    def __init__(self, entity, name, **kwargs):
         super(MetadataTech, self).__init__(entity, name)
         self.metadata_type = 'Technical'
 
-        uname = platform.uname()
-        svmem = psutil.virtual_memory()
-
-        self._metadata['system'] = uname.system
-        self._metadata['node'] = uname.node
-        self._metadata['release'] = uname.release
-        self._metadata['version'] = uname.version
-        self._metadata['machine'] = uname.machine
-        self._metadata['processor'] = uname.processor
-        self._metadata['release'] = uname.release
-        self._metadata['physical_cores'] = psutil.cpu_count(logical=False)
-        self._metadata['total_cores'] = psutil.cpu_count(logical=True)
-        self._metadata['total_memory'] = scale_number(svmem.total)
-        self._metadata['available_memory'] = scale_number(svmem.available)
-        self._metadata['used_memory'] = scale_number(svmem.used)
-        self._metadata['pct_memory_used'] = svmem.percent        
-        self._metadata['object_size'] = sys.getsizeof(self._entity)
+        self._format_metadata()        
 
     def update_metadata(self, event=None):
-        """Updates technical metadata."""
-        super(MetadataTech, self).update()
+        """ Updates metadata and increments the number of updates."""
+        self._format_metadata()
+        super(MetadataTech, self).update()        
+
+    def _format_metadata(self):    
+        """Formats tech metadata."""        
         uname = platform.uname()
         svmem = psutil.virtual_memory()
 
-        self._metadata['system'] = uname.system
+        self._metadata['tech'] = uname.tech
         self._metadata['node'] = uname.node
         self._metadata['release'] = uname.release
         self._metadata['version'] = uname.version
@@ -338,6 +545,33 @@ class MetadataTech(AbstractMetadata):
         self._metadata['used_memory'] = scale_number(svmem.used)
         self._metadata['pct_memory_used'] = svmem.percent        
         self._metadata['object_size'] = sys.getsizeof(self._entity)
+
+
+# --------------------------------------------------------------------------- #
+#                          MetadataTechFile                                   #
+# --------------------------------------------------------------------------- #
+class MetadataTechFile(MetadataTech):
+    """ Additional metadata for DataSourceFile and DataStoreFile classes."""
+
+    def __init__(self, entity, name, **kwargs):
+        super(MetadataTechFile, self).__init__(entity, name, kwargs) 
+        path = kwargs.get('path', None)        
+        if path:        
+            self._metadata['file_size'] = scale_number(os.path.getsize(path), "M")         
+
+# --------------------------------------------------------------------------- #
+#                          MetadataTechRDBMS                                  #
+# --------------------------------------------------------------------------- #
+class MetadataTechRDBMS(MetaDataTech):        
+    """Technical metadata for RDBMS sources and storage objects."""
+
+    _params = ['database', 'user', 'password', 'host', 'port']
+
+    def __init__(self, entity, name, **kwargs):
+        super(MetadataTechRDBMS, self).__init__(entity, name, kwargs)       
+        rdbms_params = dict(filter(lambda item: item[0] in self._params, kwargs.items()))                
+        self._metadata.update(rdbms_params)
+   
 
 # --------------------------------------------------------------------------- #
 #                              MetadataProcess                                #
@@ -345,7 +579,7 @@ class MetadataTech(AbstractMetadata):
 class MetadataProcess(AbstractMetadata):
     """ Storage and management of process metadata."""
 
-    def __init__(self, entity, name):
+    def __init__(self, entity, name, **kwargs):
         super(MetadataProcess, self).__init__(entity, name)
         self.metadata_type = 'Process'      
 
