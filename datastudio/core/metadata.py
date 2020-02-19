@@ -79,23 +79,31 @@ class Metadata:
         metadata_type : str
             String or partial string containing the type of metadata.
         """
-        metadata = next(v for (k, v) in self._metadata.items() if \
-            metadata_type.lower() in k.lower())
-        
-        if len(metadata) == 0:
-            raise KeyError("No metadata type matching '{t}'. \
-                Run the 'print_types' method for a list of supported \
-                    metadata types.".format(t=metadata_type))
+        if metadata_type is None:
+            return self._metadata
         else:
-            return metadata
+            metadata = next(v for (k, v) in self._metadata.items() if \
+                metadata_type.lower() in k.lower())
+            if metadata:
+                return metadata
+            else:
+                raise KeyError("No metadata type matching '{t}'. \
+                    Run the 'print_types' method for a list of supported \
+                        metadata types.".format(t=metadata_type))
 
     def print_types(self):
         for k in self._metadata.keys():
             print(k)
 
-    def print(self):
-        for v in self._metadata.values():
-            v.print()
+    def print(self, metadata_type=None):
+        if metadata_type:
+            metadata = next(v for (k, v) in self._metadata.items() if \
+                metadata_type.lower() in k.lower())
+            metadata.print()
+
+        else:            
+            for v in self._metadata.values():
+                v.print()
 
 
 
@@ -147,7 +155,7 @@ class MetadataDataSetFactory(AbstractMetadataFactory):
 
     def __init__(self, entity, name, **kwargs):        
         """ Fresh creator object should contain an empty Metadata object."""
-        super(MetadataDataSetFactory, self).__init__(entity, name, kwargs)
+        super(MetadataDataSetFactory, self).__init__(entity, name, **kwargs)
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
@@ -178,7 +186,7 @@ class MetadataDataCollectionFactory(AbstractMetadataFactory):
 
     def __init__(self, entity, name, **kwargs):        
         """ Fresh creator object should contain an empty Metadata object."""
-        super(MetadataDataCollectionFactory, self).__init__(entity, name, kwargs)
+        super(MetadataDataCollectionFactory, self).__init__(entity, name, **kwargs)
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
@@ -312,8 +320,6 @@ class AbstractMetadata(ABC):
     def __init__(self, entity, name, **kwargs):
         self._entity = entity
         self._metadata = OrderedDict() 
-        self._metadata['name'] = name    
-        self._metadata['updates'] = 0
 
     def update(self, event=None):
         """Updates metadata attributes to reflect changes to object."""
@@ -325,7 +331,7 @@ class AbstractMetadata(ABC):
             if key in self._metadata:
                 return self._metadata.get(key, None)
             else:
-                raise KeyError("Key {key} does not exist.".format(key=key))
+                raise KeyError("Key, '{key}', does not exist.".format(key=key))
         else:
             return self._metadata.copy()
 
@@ -379,15 +385,17 @@ class MetadataAdmin(AbstractMetadata):
         self._metadata['created'] = date_formatted
         self._metadata['modifier'] = user
         self._metadata['modified'] = date_formatted
+        self._metadata['updates'] = 0
         self._metadata['classname'] = classname        
-        self._metadata['objectname'] = user + '_' + date_string + '_' + '_'\
-            + classname + '_' + name
+        self._metadata['objectname'] = user.lower() + '_' + date_string + '_' + '_'\
+            + classname.lower() + '_' + name.lower()
 
     def update(self, event=None):
         """Updates metadata attributes to reflect changes to object."""
         super(MetadataAdmin, self).update()
         self._metadata['modifier'] = os.getlogin()
         self._metadata['modified'] = time.strftime("%c")
+        self._metadata['updates'] += 1
 
 # --------------------------------------------------------------------------- #
 #                          MetadataAdminFile                                  #
@@ -446,7 +454,7 @@ class MetadataDescDataCollection(MetadataDesc):
     """Metadata for DataCollection objects."""
 
     def __init__(self, entity, name, **kwargs):
-        super(MetadataAdminURL, self).__init__(entity, name, **kwargs)      
+        super(MetadataDescDataCollection, self).__init__(entity, name, **kwargs)      
         self._reset()
 
 

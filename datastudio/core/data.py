@@ -55,6 +55,7 @@ subclasses corresponding to each DataStore subclass above.
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 import pandas as pd
+from tabulate import tabulate
 
 from datastudio.core.file import FileIO
 from datastudio.core.metadata import MetadataRemoteFactory
@@ -87,6 +88,35 @@ class AbstractDataSet(ABC):
         admin = next( v for k,v in self._metadata.items() if k.startswith('admin'))
         admin.change('name', value)
 
+    @property
+    def size(self):
+        return self.metadata['tech'].get('size')
+
+    @property
+    def user(self):
+        return self.metadata['admin'].get('user')
+
+    @property
+    def created(self):
+        return self.metadata['admin'].get('created')
+
+    @property
+    def modified(self):
+        return self.metadata['admin'].get('modified')    
+
+    @property
+    def is_locked(self):
+        """ Returns the value of the locked parameter."""
+        return self._locked
+
+    def lock(self):
+        """ Locks the object, making it immutable."""
+        self._locked = True
+
+    def unlock(self):
+        """ Unlocks the object."""
+        self._locked = False
+
     @abstractmethod
     def source(self):
         """Loads the data from the datasource object."""
@@ -102,18 +132,6 @@ class AbstractDataSet(ABC):
         """ Saves the data in the datastore object."""
         pass    
 
-    def lock(self):
-        """ Locks the object, making it immutable."""
-        self._locked = True
-
-    def unlock(self):
-        """ Unlocks the object."""
-        self._locked = False
-
-    @property
-    def islocked(self):
-        """ Returns the value of the locked parameter."""
-        return self._locked
 
 # --------------------------------------------------------------------------- #
 #                                 DataSet                                     #
@@ -122,7 +140,8 @@ class DataSet(AbstractDataSet):
     """ Encapsulates a single dataset in a pandas DataFrame object."""
 
     def __init__(self, name, datasource=None, datastore=None):
-        super(DataSet, self).__init__(name, datasource, datastore)
+        super(DataSet, self).__init__(name, datasource=datasource, 
+                                            datastore=datastore)
         self._data = pd.DataFrame
         self.metadata = self._build_metadata()
 
@@ -200,7 +219,7 @@ class DataCollection(AbstractDataSet):
     """ Encapsulates a single dataset in a pandas DataFrame object."""
 
     def __init__(self, name, entity=None, **kwargs):
-        super(DataCollection, self).__init__(name, kwargs)
+        super(DataCollection, self).__init__(name, **kwargs)
         self._filter = None
         self._is_collection = True
         self._collection = OrderedDict()
@@ -224,6 +243,14 @@ class DataCollection(AbstractDataSet):
         else:
             key = entity.__class__.__name__.lower() + "_" + entity.name
         return key
+
+    def get_member(self, name):
+        """Returns a DataSet or DataCollection object matching the given name."""
+        try:
+            entity = next( v for k,v in self._collection.items() if name == v.name)
+        except KeyError as e:
+            print(e)
+
 
     def add(self, entity, name=None):
         """Adds a DataSet or DataCollection to the DataCollection object.
@@ -334,11 +361,67 @@ class DataCollection(AbstractDataSet):
 
     def load(self):
         """ Reads the data from the DataStore object."""
-        self._data = self._datastore.read()
+        pass
 
     def save(self):
         """ Saves data back to the datasource."""
-        self._datastore.write(self._data)        
+        pass
+
+    def lock(self, name=None):
+        """Lock all composite members or the member with the matching name.
+
+        Parameters
+        ----------
+        name : str
+            Names are lower case and have the format 'classname_name'.
+        """   
+        if name:
+            entities = next( v for k,v in self._collection.items() if name == v.name)
+            for k, v in entities.items():
+                v.lock()
+        else:
+            for k, v in self._collection.items():
+                v.lock()
+
+    def unlock(self, name=None):
+        """Unlock all composite members or the member with the matching name.
+
+        Parameters
+        ----------
+        name : str
+            Names are lower case and have the format 'classname_name'.
+        """         
+        if name:
+            entities = next( v for k,v in self._collection.items() if name == v.name)
+            for k, v in entities.items():
+                v.lock()
+        else:
+            for k, v in self._collection.items():
+                v.lock()
+
+    def print_members(self):
+        classes = []
+        names = []
+        locked = []        
+        sizes = []
+        created = []
+        modified = []
+        updates = []
+        user = []
+        for k, v in self._collection.items():
+            classes.append(v.__class__.__name__)
+            names.append(v.name)
+            locked.append(v.is_locked)
+            sizes.append(v.metadata.get('technical').get('object_size'))
+            created.append(v.metadata.get('administrative').get('created'))
+            modified.append(v.metadata.get('administrative').get('modified'))
+            updates.append(v.metadata.get('administrative').get('updates'))
+            user.append(v.metadata.get('administrative').get('creator'))
+
+        d = {"Class": classes, "Name": names, "Is Locked?": locked, "Size": sizes,
+             "Created": created, "Modified": modified, "Updates": updates, 
+             "User": user}
+        print(tabulate(d, headers="keys"))
 
 # =========================================================================== #
 #                            DATA STORE CLASSES                               #
@@ -486,14 +569,14 @@ class DataSourceFile(AbstractDataSource):
         The relative path for the file
     """
 
-    def __init__(self, name, path):
-        super(DataSourceFile, self).__init__(name, path)                
+    def __init__(self, name, **kwargs):
+        super(DataSourceFile, self).__init__(name, **kwargs)                
         self._io = FileIO()
-        self._path = path
+        self._path = next(v for (k,v) in kwargs.items() if 'path' in k)
         self.metadata = self._build_metadata()
 
     def _build_metadata(self):
-        factory = MetadataFileFactory(self, self._name, self._path)
+        factory = MetadataFileFactory(self, self._name, path=self._path)
         factory.create_admin() 
         factory.create_desc() 
         factory.create_tech() 

@@ -23,6 +23,8 @@ import os
 import numpy as np
 from pytest import fixture
 
+from datastudio.core.data import DataStoreFile, DataSourceFile
+from datastudio.core.data import DataSet, DataCollection
 from datastudio.core.file import File
 USECOLS = ["id", "host_id",
             "host_response_rate",
@@ -109,7 +111,22 @@ def get_dfs():
     dfs = [dfn, dfsf]
     return dfs
 
+@fixture(scope='function')
+def get_datasets():
+    source_path = "./tests/test_data/test_file/san_francisco.csv"
+    store_path = "./tests/test_data/test_file/san_francisco.xlsx"
+    name = 'sf_listings'
+    source = DataSourceFile(name, path=source_path)        
+    store = DataStoreFile(name, path=store_path)  
+    ds1 = DataSet(name=name, datasource=source, datastore=store)     
 
+    source_path = "./tests/test_data/test_file/nashville.csv"
+    store_path = "./tests/test_data/test_file/nashville.csv.gz"
+    name = 'nashville_listings'
+    source = DataSourceFile(name, path=source_path)        
+    store = DataStoreFile(name, path=store_path)  
+    ds2 = DataSet(name=name, datasource=source, datastore=store)     
+    return ds1, ds2
 
 
 
