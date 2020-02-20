@@ -105,23 +105,7 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn import discriminant_analysis
 from tabulate import tabulate
 
-# --------------------------------------------------------------------------- #
-#                        AbstractStatisticalTests                             #
-# --------------------------------------------------------------------------- #
-class AbstractStatisticalTests(ABC):
-
-    @abstractmethod
-    def fit(self, X):
-        pass
-
-    @abstractmethod
-    def get_result(self):
-        pass
-
-    @abstractmethod
-    def print(self):
-        pass
-
+from datastudio.understanding.stat_tests.interface import AbstractStatisticalTests
 
 # =========================================================================== #
 #                           Association Tests                                 #

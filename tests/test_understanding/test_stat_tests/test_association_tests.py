@@ -32,7 +32,7 @@ from datastudio.understanding.stat_tests.association import Covariance, CCA
 
 class AssociationTests:
   
-    @mark.stats
+    @mark.association
     def test_chisquare(self, get_arrays):
         print("\n\nAssociation Tests")
         print("="*40)
@@ -52,7 +52,7 @@ class AssociationTests:
         X2, p = test.get_result()
         test.print()        
         
-    @mark.stats
+    @mark.association
     def test_fisher_exact(self, get_arrays):
         print("\n\nFisher Exact Tests")
         print("-"*40)
@@ -62,7 +62,7 @@ class AssociationTests:
         odds, p = test.get_result()
         test.print()        
 
-    @mark.stats
+    @mark.association
     def test_anova_one(self, get_arrays):
         print("\n\nOne-Way ANOVA Tests")
         print("-"*40)
@@ -72,7 +72,7 @@ class AssociationTests:
         f, p = test.get_result()
         test.print()                
 
-    @mark.stats
+    @mark.association
     def test_kruskal(self, get_arrays):
         print("\n\nKruskal Wallis Tests")
         print("-"*40)
@@ -82,7 +82,7 @@ class AssociationTests:
         h, p = test.get_result()
         test.print()             
 
-    @mark.stats
+    @mark.association
     def test_pearsonr(self, get_arrays):
         print("\n\nPearsonR Correlation Tests")
         print("-"*40)
@@ -92,7 +92,7 @@ class AssociationTests:
         h, p = test.get_result()
         test.print()          
 
-    @mark.stats
+    @mark.association
     def test_spearmanr(self, get_arrays):
         print("\n\nSpearmanR Correlation Tests")
         print("-"*40)
@@ -102,7 +102,7 @@ class AssociationTests:
         h, p = test.get_result()
         test.print()              
 
-    @mark.stats
+    @mark.association
     def test_cov(self, get_arrays):
         print("\n\nCovariaance Tests")
         print("-"*40)
@@ -112,7 +112,7 @@ class AssociationTests:
         cov = test.get_result()
         test.print()                 
 
-    @mark.stats
+    @mark.association
     def test_cca(self, get_X_y):
         print("\n\nCanonical Correlation Test")
         print("-"*40)
