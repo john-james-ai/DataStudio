@@ -128,6 +128,15 @@ def get_datasets():
     ds2 = DataSet(name=name, datasource=source, datastore=store)     
     return ds1, ds2
 
+@fixture(scope='session')
+def get_arrays():
+    """Returns 1, 2, and 3d arrays."""
+    a1 = np.random.randint(20,size=100)
+    a2 = np.random.randint(100,size=(10, 10))
+    a3 = np.random.randint(100,size=(10,10,10))
+    return a1, a2, a3
+
+
 
 
 
