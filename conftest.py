@@ -132,11 +132,17 @@ def get_datasets():
 def get_arrays():
     """Returns 1, 2, and 3d arrays."""
     a1 = np.random.randint(20,size=100)
-    a2 = np.random.randint(100,size=(10, 10))
-    a3 = np.random.randint(100,size=(10,10,10))
-    return a1, a2, a3
+    a2 = np.random.normal(10,size=(100))
+    a3 = np.random.normal(100,size=(10,10))
+    a4 = np.random.randint(10, size=(2,2))
+    return a1, a2, a3, a4
 
-
+@fixture(scope='session')
+def get_X_y():
+    """Returns X,y."""
+    x = np.random.randint(20,size=(10,10))
+    y = np.random.normal(10,size=(10))
+    return x,y
 
 
 
