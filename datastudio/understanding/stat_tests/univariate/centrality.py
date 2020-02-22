@@ -95,24 +95,17 @@ the interface for all test classes.
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
-from scipy.stats import chisquare, fisher_exact, f_oneway, kruskal, pearsonr
-from scipy.stats import spearmanr, ttest_1samp, median_test, binom_test
-from scipy.stats import ttest_ind, mannwhitneyu, ttest_rel, wilcoxon
-from scipy.stats import friedmanchisquare
-from sklearn.cross_decomposition import CCA
-from sklearn.decomposition import FactorAnalysis
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn import discriminant_analysis
+from scipy.stats import ttest_1samp, median_test, zscore
 from tabulate import tabulate
 
-from datastudio.understanding.stat_tests.interface import AbstractStatisticalTests
+from datastudio.understanding.stat_tests.interface import AbstractStatisticalTest
 # =========================================================================== #
 #                           Centrality Tests                                  #
 # =========================================================================== #
 # --------------------------------------------------------------------------- #
 #                            One Sample t-test                                #
 # --------------------------------------------------------------------------- #
-class TTestOne(AbstractStatisticalTests):
+class TTestOne(AbstractStatisticalTest):
     """Performs the One Sample t-test."""
 
     def __init__(self):
@@ -140,7 +133,7 @@ class TTestOne(AbstractStatisticalTests):
 # --------------------------------------------------------------------------- #
 #                            One Sample Median Test                           #
 # --------------------------------------------------------------------------- #
-class MedianTest(AbstractStatisticalTests):
+class MedianTest(AbstractStatisticalTest):
     """Performs the One Sample Median Test."""
 
     def __init__(self):
@@ -175,3 +168,51 @@ class MedianTest(AbstractStatisticalTests):
         result = {'X^2 statistic': [self._X2], 'p-value': [self._p],
                   'Grand Median': [self._m], 'Contingency Table': self._ctable}
         print(tabulate(result, headers='keys'))
+
+# --------------------------------------------------------------------------- #
+#                                  Z Score                                    #
+# --------------------------------------------------------------------------- #
+class ZScore(AbstractStatisticalTest):
+    """Compute the z score.
+    
+    Compute the z score of each value in the sample, relative to the sample 
+    mean and standard deviation.
+
+    Parameters
+    ----------
+    a : array_like
+        An array like object containing the sample data.
+
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over 
+        the whole array a.
+
+    ddof ; int, optional
+        Degrees of freedom correction in the calculation of the standard deviation. 
+        Default is 0.
+
+    nan_policy : {‘propagate’, ‘raise’, ‘omit’}, optional
+        Defines how to handle when input contains nan. ‘propagate’ returns nan,
+        ‘raise’ throws an error, ‘omit’ performs the calculations ignoring nan 
+        values. Default is ‘propagate’.
+
+    Returns
+    -------
+    zscore : array_like
+        The z-scores, standardized by mean and standard deviation of input array a.
+
+    """
+
+    def __init__(self):
+        self._z = 0
+
+    def fit(self,a, axis=0, ddof=0, nan_policy='propagate'):        
+         self._z = zscore(a, axis=axis, ddof=ddof)
+
+    def get_result(self):
+        return self._z
+
+    def print(self):
+        result = {'Z Score': [self._z]}
+        print(tabulate(result, headers='keys'))
+

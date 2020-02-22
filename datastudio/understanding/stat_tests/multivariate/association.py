@@ -3,7 +3,7 @@
 # =========================================================================== #
 # Project : Data Studio                                                       #
 # Version : 0.1.0                                                             #
-# File    : tests.py                                                          #
+# File    : association.py                                                    #
 # Python  : 3.8.1                                                             #
 # --------------------------------------------------------------------------- #
 # Author  : John James                                                        #
@@ -11,26 +11,15 @@
 # Email   : jjames@decisionscients.com                                        #
 # URL     : https://github.com/decisionscients/datastudio                     #
 # --------------------------------------------------------------------------- #
-# Created       : Thursday, February 20th 2020, 12:28:39 am                   #
-# Last Modified : Thursday, February 20th 2020, 12:28:40 am                   #
+# Created       : Saturday, February 22nd 2020, 5:49:27 am                    #
+# Last Modified : Saturday, February 22nd 2020, 5:49:27 am                    #
 # Modified By   : John James (jjames@decisionscients.com>)                    #
 # --------------------------------------------------------------------------- #
 # License : BSD                                                               #
 # Copyright (c) 2020 DecisionScients                                          #
 # =========================================================================== #
-"""Module defines the suite of statistical tests provided in DataStudio.
 
-This package supports 32 statistical tests, organized around various facets of 
-statistical inference. The classes fall broadly into five groups:
-
-    1. Tests of Association
-    2. Tests of Central Tendency  
-    3. Tests of Dispersion
-    4. Tests between Groups
-    5. Tests of Assumptions  
-    6. Predictive Analytics.
-
-The classes are hereby listed below by category.
+"""Module statistical tests of association between 2 variables. 
 
 Association Tests
 -----------------
@@ -95,38 +84,60 @@ the interface for all test classes.
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
-from scipy.stats import chisquare, fisher_exact, f_oneway, kruskal, pearsonr
-from scipy.stats import spearmanr, ttest_1samp, median_test, binom_test
-from scipy.stats import ttest_ind, mannwhitneyu, ttest_rel, wilcoxon
-from scipy.stats import friedmanchisquare
 from sklearn.cross_decomposition import CCA
-from sklearn.decomposition import FactorAnalysis
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn import discriminant_analysis
 from tabulate import tabulate
 
-from datastudio.understanding.stat_tests.interface import AbstractStatisticalTests
+from datastudio.understanding.stat_tests.interface import AbstractStatisticalTest
+
 # =========================================================================== #
-#                           Compare Group Tests                               #
+#                           Association Tests                                 #
 # =========================================================================== #
 # --------------------------------------------------------------------------- #
-#                            One Sample t-test                                #
+#                     Canonical Correlation Analysis                          #
 # --------------------------------------------------------------------------- #
-class Binomial(AbstractStatisticalTests):
-    """Performs the Binomial Test."""
+class CCA(AbstractStatisticalTest):
+    """Performs a canonical correlation analysis."""
 
-    def __init__(self):        
-        self._p = 0        
+    def __init__(self, n_components=2, scale=True, max_iter=500, 
+            tol=1e-06, copy=True):
+        self._X_scores = 0
+        self._Y_scores = 0
+        self._cca = CCA(n_components, scale, max_iter, tol,copy)
 
-    def fit(self, x, n=None, p=0.5):        
-         self._p = binom_test(x,n,p)
+    def fit(self, X, y):         
+        self._cca.fit(X, y)        
+        self._X_scores, self._Y_scores = self._cca.transform(X,y)
 
     def get_result(self):
-        return self._p
-    @property
-    def p_value(self):
-        return self._p
+        return self._X_scores, self._Y_scores
 
-    def print(self):
-        result = {'p-value': [self._p]}
-        print(tabulate(result, headers='keys'))
+    @property
+    def cca(self):
+        return self._X_scores, self._Y_scores
+
+    def print(self):        
+        print(tabulate(self._X_scores, self._Y_scores))          
+
+# --------------------------------------------------------------------------- #
+#                            Covariance                                       #
+# --------------------------------------------------------------------------- #
+class Covariance(AbstractStatisticalTest):
+    """Performs an estimate of a covariance matrix."""
+
+    def __init__(self):
+        self._cov = None           
+
+    def fit(self, m, y=None, rowvar=True, bias=False, ddof=None, 
+            fweights=None, aweights=None):        
+         self._cov = np.cov(m, y=y, rowvar=rowvar, bias=bias, ddof=ddof, 
+            fweights=fweights, aweights=aweights)
+
+    def get_result(self):
+        return self._cov
+
+    @property
+    def cov(self):
+        return self._cov
+
+    def print(self):        
+        print(tabulate(self._cov))            

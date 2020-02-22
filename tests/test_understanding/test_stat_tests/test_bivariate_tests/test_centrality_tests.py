@@ -3,7 +3,7 @@
 # =========================================================================== #
 # Project : Data Studio                                                       #
 # Version : 0.1.0                                                             #
-# File    : test_tests.py                                                     #
+# File    : test_centrality_tests.py                                          #
 # Python  : 3.8.1                                                             #
 # --------------------------------------------------------------------------- #
 # Author  : John James                                                        #
@@ -11,8 +11,8 @@
 # Email   : jjames@decisionscients.com                                        #
 # URL     : https://github.com/decisionscients/datastudio                     #
 # --------------------------------------------------------------------------- #
-# Created       : Thursday, February 20th 2020, 1:32:54 am                    #
-# Last Modified : Thursday, February 20th 2020, 1:32:55 am                    #
+# Created       : Saturday, February 22nd 2020, 6:00:45 am                    #
+# Last Modified : Saturday, February 22nd 2020, 6:00:45 am                    #
 # Modified By   : John James (jjames@decisionscients.com>)                    #
 # --------------------------------------------------------------------------- #
 # License : BSD                                                               #
@@ -25,19 +25,18 @@ import pytest
 from pytest import mark
 import time
 
-from datastudio.understanding.stat_tests.compare import Binomial
-
-class CompareTests:
+from datastudio.understanding.stat_tests.bivariate.centrality import *
+class BivariateCentralityTests:
   
-    @mark.compare
-    def test_binomial(self, get_arrays):
-        print("\n\nCompare Group Tests")
-        print("="*40)
-        print("\n\nBinomial Test")
+    @mark.bivariate
+    @mark.centrality
+    def test_ttestind(self, get_arrays):
+        print("\n\nBivariate Centrality Tests")
         print("-"*40)
-        a1, a2, a3, a4 = get_arrays        
-        test = Binomial()
-        test.fit(3,5)
-        p = test.get_result()
-        test.print()
-             
+        print("\n\nIndependent t-Tests")
+        print("-"*40)
+        a1, a2, a3, a4, a5 = get_arrays        
+        test = TTestInd()
+        test.fit(a1, a5)
+        t, p = test.get_result()
+        test.print()      

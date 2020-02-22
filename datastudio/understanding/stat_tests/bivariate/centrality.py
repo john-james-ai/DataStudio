@@ -95,32 +95,60 @@ the interface for all test classes.
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
-from scipy.stats import chisquare, fisher_exact, f_oneway, kruskal, pearsonr
-from scipy.stats import spearmanr, ttest_1samp, median_test, binom_test
-from scipy.stats import ttest_ind, mannwhitneyu, ttest_rel, wilcoxon
-from scipy.stats import friedmanchisquare
-from sklearn.cross_decomposition import CCA
-from sklearn.decomposition import FactorAnalysis
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn import discriminant_analysis
+from scipy.stats import ttest_ind
 from tabulate import tabulate
 
+from datastudio.understanding.stat_tests.interface import AbstractStatisticalTest
+# =========================================================================== #
+#                           Compare Group Tests                               #
+# =========================================================================== #
 # --------------------------------------------------------------------------- #
-#                        AbstractStatisticalTest                             #
+#                         2 Independent T-Test                                #
 # --------------------------------------------------------------------------- #
-class AbstractStatisticalTest(ABC):
+class TTestInd(AbstractStatisticalTest):
+    """Calculate the T-test for the means of two independent samples of scores.
 
-    @abstractmethod
-    def __init__(self):
-        self._statistic = 0
-        self._p = 0      
+    This is a two-sided test for the null hypothesis that 2 independent samples 
+    have identical average (expected) values. This test assumes that the populations 
+    have identical variances by default.
 
-    @abstractmethod
-    def fit(self, *args, **kwargs):
-        pass
+    Attributes
+    ----------
+    statistic : float or array
+        The calculated t-statistic.
+
+    pvalue: float or array
+        The two-tailed p-value.   
     
+    """
+
+    def __init__(self):        
+        super(TTestInd, self).__init__()        
+
+    def fit(self, a, b, axis=0, equal_var=True, nan_policy='propagate'):        
+        """Calculate the T-test for the means of two independent samples of scores.
+
+        Parameters
+        ----------
+        a, b : array_like
+            The arrays must have the same shape, except in the dimension corresponding to axis (the first, by default).
+
+        axis " int or None, optional
+            Axis along which to compute test. If None, compute over the whole arrays, a, and b.
+
+        equal_var : bool, optional
+            If True (default), perform a standard independent 2 sample test that assumes equal population variances [1]. If False, perform Welch’s t-test, which does not assume equal population variance [2].
+
+        nan_policy : {‘propagate’, ‘raise’, ‘omit’}, optional
+            Defines how to handle when input contains nan. The following options are available (default is ‘propagate’):
+            - ‘propagate’: returns nan
+            - ‘raise’: throws an error
+            - ‘omit’: performs the calculations ignoring nan values       
+        
+        """        
+        self._statistic, self._p = ttest_ind(a,b, axis=axis, equal_var=equal_var)
+
     def get_result(self):
-        """ Returns the statistic and p_value for the test."""
         return self._statistic, self._p
 
     @property
@@ -131,7 +159,7 @@ class AbstractStatisticalTest(ABC):
     def p_value(self):
         return self._p
 
-    @abstractmethod
     def print(self):
-        pass        
+        result = {'t-statistic': [self._statistic], 'p-value': [self._p]}
+        print(tabulate(result, headers='keys'))
 
