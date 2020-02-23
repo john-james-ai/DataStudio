@@ -52,3 +52,26 @@ class UnivariateDistributionTests:
         test.fit(a1)
         ks, p = test.get_result()
         test.print()                      
+
+    @mark.univariate
+    @mark.distribution
+    def test_shapiro_wilk_test(self, get_arrays):
+        print("\n\nShapiro-Wilk Test")
+        print("-"*40)
+        a1, a2, a3, a4, a5 = get_arrays        
+        test = Shapiro()
+        test.fit(a1)
+        w, p = test.get_result()
+        test.print()                       
+
+    @mark.univariate
+    @mark.distribution
+    def test_anderson_darling_test(self, get_arrays):
+        print("\n\nAnderson-Darling Test")
+        print("-"*40)
+        a1, a2, a3, a4, a5 = get_arrays        
+        test = Anderson()
+        test.fit(a1)
+        w, p = test.get_result()
+        print(test.p_value)
+        test.print()             

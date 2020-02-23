@@ -146,57 +146,145 @@ class FisherExact(AbstractStatisticalTest):
 #                         Pearson's Correlation Test                          #
 # --------------------------------------------------------------------------- #
 class PearsonR(AbstractStatisticalTest):
-    """Performs the Pearsons Correlation Test."""
+    """Calculates a Pearson correlation coefficient and the p-value 
+    for testing non-correlation.
+
+    The Pearson correlation coefficient measures the linear relationship 
+    between two datasets. Strictly speaking, Pearson’s correlation requires 
+    that each dataset be normally distributed. Like other correlation 
+    coefficients, this one varies between -1 and +1 with 0 implying 
+    no correlation. Correlations of -1 or +1 imply an exact linear 
+    relationship. Positive correlations imply that as x increases, so does y. 
+    Negative correlations imply that as x increases, y decreases.
+
+    The p-value roughly indicates the probability of an uncorrelated 
+    system producing datasets that have a Pearson correlation at least 
+    as extreme as the one computed from these datasets. The p-values 
+    are not entirely reliable but are probably reasonable for datasets 
+    larger than 500 or so.
+    
+    Attributes
+    ----------
+    R : Pearsons correlation coefficient
+    p : 2-tailed p-value
+    
+    """
 
     def __init__(self):
-        self._r = 0
-        self._p = 0        
+        super(PearsonR, self).__init__()      
 
-    def fit(self,X, Y):        
-         self._r, self._p = pearsonr(X, Y)
+    def fit(self,X, Y):    
+        """Calculates a Pearson correlation coefficient and the p-value 
+        for testing non-correlation.
+
+        Parameters
+        ----------
+        x : (N,) array_like
+            Input
+        y : (N,) array_like
+            Input
+        """
+    
+        self._statistic, self._p = pearsonr(X, Y)
 
     def get_result(self):
-        return (self._r, self._p)
+        """Returns the Pearson's correlation coefficient and 2-tailed p-value.
+        
+        Returns
+        -------
+        R : Pearsons correlation coefficient
+        p : 2-tailed p-value
 
-    @property
-    def pearsonr(self):
-        return self._r
-
-    @property
-    def p_value(self):
-        return self._p
+        """
+        return super(PearsonR, self).get_result()
 
     def print(self):
-        result = {'R-Statistic': [self._r], 'p-value': [self._p]}
+        result = {"Pearson's Correlation Coefficient": [self._r], 'p-value': [self._p]}
         print(tabulate(result, headers='keys'))             
 
 # --------------------------------------------------------------------------- #
 #                         Spearman's Correlation Test                         #
 # --------------------------------------------------------------------------- #
 class SpearmanR(AbstractStatisticalTest):
-    """Performs the Spearmans Rank Order Correlation Test."""
+    """Calculate a Spearman correlation coefficient with associated p-value.
+
+    The Spearman rank-order correlation coefficient is a nonparametric measure 
+    of the monotonicity of the relationship between two datasets. Unlike 
+    the Pearson correlation, the Spearman correlation does not assume 
+    that both datasets are normally distributed. Like other correlation 
+    coefficients, this one varies between -1 and +1 with 0 implying no 
+    correlation. Correlations of -1 or +1 imply an exact monotonic 
+    relationship. Positive correlations imply that as x increases, so 
+    does y. Negative correlations imply that as x increases, y decreases.
+
+    The p-value roughly indicates the probability of an uncorrelated system 
+    producing datasets that have a Spearman correlation at least as extreme 
+    as the one computed from these datasets. The p-values are not entirely 
+    reliable but are probably reasonable for datasets larger than 500 or so.
+    
+    Attributes
+    ----------
+    correlation : float or ndarray (2-D square)
+        Spearman correlation matrix or correlation coefficient 
+        (if only 2 variables are given as parameters. Correlation matrix 
+        is square with length equal to total number of variables 
+        (columns or rows) in a and b combined.
+    pvalue: float
+        The two-sided p-value for a hypothesis test whose null hypothesis 
+        is that two sets of data are uncorrelated, has same dimension as rho.
+
+    """
 
     def __init__(self):
-        self._r = 0
-        self._p = 0        
+        super(SpearmanR, self).__init__()      
 
-    def fit(self,X, Y, axis=0, nan_policy='propagate'):        
-         self._r, self._p = spearmanr(X, Y, axis=axis, nan_policy=nan_policy)
+    def fit(self,X, Y):    
+        """Calculates a Spearman correlation coefficient and the p-value.
+
+        Parameters
+        ----------
+        a, b : 1D or 2D array_like, b is optional
+            One or two 1-D or 2-D arrays containing multiple variables and 
+            observations. When these are 1-D, each represents a vector of 
+            observations of a single variable. For the behavior in the 2-D 
+            case, see under axis, below. Both arrays need to have the same 
+            length in the axis dimension.
+        axis : int or None, optional
+            If axis=0 (default), then each column represents a variable, with 
+            observations in the rows. If axis=1, the relationship is 
+            transposed: each row represents a variable, while the columns 
+            contain observations. If axis=None, then both arrays will be raveled.
+
+        nan_policy : {‘propagate’, ‘raise’, ‘omit’}, optional
+            Defines how to handle when input contains nan. The following options 
+            are available (default is ‘propagate’):
+            - ‘propagate’: returns nan
+            - ‘raise’: throws an error
+            - ‘omit’: performs the calculations ignoring nan values
+        """
+    
+        self._statistic, self._p = spearmanr(X, Y)
 
     def get_result(self):
-        return (self._r, self._p)
+        """Returns the Pearson's correlation coefficient and 2-tailed p-value.
+        
+        Returns
+        -------
+        correlation : float or ndarray (2-D square)
+            Spearman correlation matrix or correlation coefficient 
+            (if only 2 variables are given as parameters. Correlation matrix 
+            is square with length equal to total number of variables 
+            (columns or rows) in a and b combined.
+        pvalue: float
+            The two-sided p-value for a hypothesis test whose null hypothesis 
+            is that two sets of data are uncorrelated, has same dimension as rho.
 
-    @property
-    def spearmanr(self):
-        return self._r
-
-    @property
-    def p_value(self):
-        return self._p
+        """
+        return super(SpearmanR, self).get_result()
 
     def print(self):
-        result = {'R-Statistic': [self._r], 'p-value': [self._p]}
-        print(tabulate(result, headers='keys'))              
+        result = {"Spearman's Correlation Coefficient": [self._r], 'p-value': [self._p]}
+        print(tabulate(result, headers='keys'))             
 
                   
 

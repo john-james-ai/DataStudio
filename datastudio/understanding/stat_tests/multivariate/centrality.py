@@ -61,10 +61,18 @@ class Kruskal(AbstractStatisticalTest):
         """
         self._statistic, self._p = kruskal(*args, **kwargs)
 
+    def get_result(self):
+        """ Returns results of the most recent one-way ANOVA test.
 
-    @property
-    def p_value(self):
-        return self._p
+        Returns
+        -------
+        statistic : float
+            The Kruskal-Wallis H statistic, corrected for ties.
+        pvalue : float
+            The p-value for the test using the assumption that H has a chi square distribution.
+
+        """
+        return super(AnovaOne, self).get_result()        
 
     def print(self):
         result = {'H-Statistic': [self._statistic], 'p-value': [self._p]}

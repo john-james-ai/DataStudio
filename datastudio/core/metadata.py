@@ -148,14 +148,14 @@ class AbstractMetadataFactory(ABC):
 
 
 # --------------------------------------------------------------------------- #
-#                        MetadataDataSetFactory                               #
+#                        MetadataEntityFactory                                #
 # --------------------------------------------------------------------------- #
-class MetadataDataSetFactory(AbstractMetadataFactory):
+class MetadataEntityFactory(AbstractMetadataFactory):
     """ Builds a Metadata object for DataSet objects."""
 
     def __init__(self, entity, name, **kwargs):        
         """ Fresh creator object should contain an empty Metadata object."""
-        super(MetadataDataSetFactory, self).__init__(entity, name, **kwargs)
+        super(MetadataEntityFactory, self).__init__(entity, name, **kwargs)
 
     def create_admin(self):
         """Adds a administrative metadata subclass object."""
@@ -442,8 +442,11 @@ class MetadataDesc(AbstractMetadata):
     def __init__(self, entity, name, **kwargs):
         super(MetadataDesc, self).__init__(entity, name, **kwargs)
         self.metadata_type = 'Descriptive'
-
-        self._metadata['description'] = ""
+        self._metadata['type'] = "" # User defined type
+        self._metadata['category'] = "" # User defined category 
+        self._metadata['title'] = ""  # Capital case title for the object
+        self._metadata['description_short'] = "" # One line description         
+        self._metadata['description'] = "" # Long description
         self._metadata['class'] = entity.__class__.__name__
         self._metadata['version'] = "0.1.0"
        

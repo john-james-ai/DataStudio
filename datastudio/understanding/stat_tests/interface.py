@@ -93,42 +93,47 @@ the interface for all test classes.
 """
 
 from abc import ABC, abstractmethod
-import numpy as np
-import pandas as pd
-from scipy.stats import chisquare, fisher_exact, f_oneway, kruskal, pearsonr
-from scipy.stats import spearmanr, ttest_1samp, median_test, binom_test
-from scipy.stats import ttest_ind, mannwhitneyu, ttest_rel, wilcoxon
-from scipy.stats import friedmanchisquare
-from sklearn.cross_decomposition import CCA
-from sklearn.decomposition import FactorAnalysis
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn import discriminant_analysis
-from tabulate import tabulate
+import textwrap
 
 # --------------------------------------------------------------------------- #
-#                        AbstractStatisticalTest                             #
+#                        AbstractStatisticalTest                              #
 # --------------------------------------------------------------------------- #
 class AbstractStatisticalTest(ABC):
 
     @abstractmethod
     def __init__(self):
         self._statistic = 0
-        self._p = 0      
+        self._p = 0    
+
 
     @abstractmethod
     def fit(self, *args, **kwargs):
         pass
     
+    def describe(self, verbose=False, print=False):
+        """Describes the test.
+        
+        Parameters
+
+        """
+        desc = {'Id': self._id, "Test Type" : self._type, 
+                "Category": self._category, "Name": self._title,
+                "Description" : self._desc_short}
+
+        
+
     def get_result(self):
         """ Returns the statistic and p_value for the test."""
         return self._statistic, self._p
 
     @property
     def statistic(self):
+        """ Returns the test statistic"""
         return self._statistic
 
     @property
     def p_value(self):
+        """ Returns the p-value for the test statistic."""
         return self._p
 
     @abstractmethod

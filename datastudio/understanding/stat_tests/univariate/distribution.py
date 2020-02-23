@@ -91,7 +91,7 @@ Each of the classes above comply with an Abstract Base Class which defines
 the interface for all test classes. 
 
 """
-from scipy.stats import chisquare, binom_test
+from scipy.stats import chisquare, binom_test, anderson
 from statsmodels.stats.diagnostic import lilliefors
 from tabulate import tabulate
 
@@ -112,9 +112,6 @@ class Binomial(AbstractStatisticalTest):
          self._p = binom_test(x,n,p)
 
     def get_result(self):
-        return self._p
-    @property
-    def p_value(self):
         return self._p
 
     def print(self):
@@ -143,13 +140,6 @@ class ChiSquareGoF(AbstractStatisticalTest):
     def __init__(self):
         super(ChiSquareGoF, self).__init__()
 
-    @property
-    def statistic(self):
-        return self._statistic
-
-    @property
-    def p_value(self):
-        return self._p
 
     def fit(self, X, exp=None, ddof=0, axis=0):   
         """Performs the statistical test.
@@ -203,13 +193,6 @@ class KolmogorovSmirnov(AbstractStatisticalTest):
     def __init__(self):
         super(KolmogorovSmirnov, self).__init__()
 
-    @property
-    def statistic(self):
-        return self._statistic
-
-    @property
-    def p_value(self):
-        return self._p        
 
     def fit(self, x, dist='norm', pvalmethod='table'):   
         """Performs the statistical test.
@@ -238,3 +221,123 @@ class KolmogorovSmirnov(AbstractStatisticalTest):
     def print(self):
         result = {'KS Statistic': [self._statistic], 'p-value': [self._p]}
         print(tabulate(result, headers='keys'))        
+
+# --------------------------------------------------------------------------- #
+#                        Shapiro-Wilk Normality Test                          #
+# --------------------------------------------------------------------------- #        
+class Shapiro(AbstractStatisticalTest):
+    """Perform the Shapiro-Wilk test for normality.
+
+    The Shapiro-Wilk test tests the null hypothesis that the data was drawn 
+    from a normal distribution.
+
+    Attributes
+    ----------
+    W : float
+        The  test statistic.
+    pvalue : float
+        If the pvalue for the hypothesis test.  
+
+    """
+
+    def __init__(self):
+        super(Shapiro, self).__init__()
+
+
+    def fit(self, x, dist='norm', pvalmethod='table'):   
+        """Perform the Shapiro-Wilk test for normality.
+
+        Parameters
+        ----------
+        x : array_like, 1d
+            Data to test.
+        """
+         
+        self._statistic, self._p = lilliefors(x, dist=dist, pvalmethod=pvalmethod)
+
+
+    def print(self):
+        result = {'W Statistic': [self._statistic], 'p-value': [self._p]}
+        print(tabulate(result, headers='keys'))  
+
+# --------------------------------------------------------------------------- #
+#                        Anderson-Darling Test                                #
+# --------------------------------------------------------------------------- #        
+class Anderson(AbstractStatisticalTest):
+    """Perform the Shapiro-Wilk test for normality.
+
+    Anderson-Darling test for data coming from a particular distribution.
+
+    The Anderson-Darling tests the null hypothesis that a sample is drawn 
+    from a population that follows a particular distribution. For the 
+    Anderson-Darling test, the critical values depend on which distribution 
+    is being tested against. This function works for normal, exponential, 
+    logistic, or Gumbel (Extreme Value Type I) distributions.
+
+    Attributes
+    ----------
+    statistic : float
+        The Anderson-Darling test statistic.
+    critical_values : list
+        The critical values for this distribution.
+    significance_level : list
+        The significance levels for the corresponding critical values in 
+        percents. The function returns critical values for a differing set 
+        of significance levels depending on the distribution that is being 
+        tested against.
+
+    """
+    def __init__(self):
+        super(Anderson, self).__init__()
+        self._critical_values = []
+        self._significance_level = []
+
+
+    def fit(self, x, dist='norm'):   
+        """Perform the Anderson-Darling test.
+
+        Parameters
+        ----------
+        x : array_like, 1d
+            Data to test.
+
+        dist : {‘norm’,’expon’,’logistic’,’gumbel’,’gumbel_l’, gumbel_r’,‘extreme1’}, optional 
+            the type of distribution to test against. The default is ‘norm’ and 
+            ‘extreme1’, ‘gumbel_l’ and ‘gumbel’ are synonyms.
+
+        """
+         
+        self._statistic, self._critical_values, self._significance_level = \
+            anderson(x, dist=dist)
+
+    @property
+    def p_value(self):
+        note = "The Anderson-Darling test has no p-value."
+        return note
+
+    def get_results(self):
+        """Returns results of Anderson-Darling test.
+
+        Returns
+        -------
+        statistic : float
+            The Anderson-Darling test statistic.
+        critical_values : list
+            The critical values for this distribution.
+        significance_level : list
+            The significance levels for the corresponding critical values in 
+            percents. The function returns critical values for a differing set 
+            of significance levels depending on the distribution that is being 
+            tested against.    
+
+        """
+
+        return self._statistic, self._critical_values, self._significance_level
+
+
+    def print(self):
+        result = {'Critical Values': self._critical_values,
+                  'Significance Level': self._significance_level,}
+        print("Anderson-Darling Test Statistic : {stat}".format(stat=self._statistic))
+        print("----------------------------------------------------")
+        print(tabulate(result, headers='keys'))          

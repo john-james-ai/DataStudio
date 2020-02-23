@@ -106,25 +106,32 @@ from datastudio.understanding.stat_tests.interface import AbstractStatisticalTes
 #                            One Sample t-test                                #
 # --------------------------------------------------------------------------- #
 class TTestOne(AbstractStatisticalTest):
-    """Performs the One Sample t-test."""
+    """Calculates the T-test for the mean of ONE group of scores.
+    
+    Attributes
+    ----------
+
+    """
 
     def __init__(self):
         self._t = 0
         self._p = 0        
 
     def fit(self, a, popmean, axis=0):        
-         self._t, self._p = ttest_1samp(a, popmean, axis)
-
-    def get_result(self):
-        return (self._t, self._p)
-
-    @property
-    def ttestone(self):
-        return self._t
-
-    @property
-    def p_value(self):
-        return self._p
+        """Calculates the T-test for the mean of ONE group of scores.
+        
+        Parameters
+        ----------
+        a : array_like
+            sample observation
+        popmean : float or array_like
+            expected value in null hypothesis, if array_like than 
+            it must have the same shape as a excluding the axis dimension
+        axis : int or None, optional
+            Axis along which to compute test. If None, compute over the whole array a.
+        
+        """
+        self._t, self._p = ttest_1samp(a, popmean, axis)
 
     def print(self):
         result = {'t-statistic': [self._t], 'p-value': [self._p]}
@@ -134,30 +141,103 @@ class TTestOne(AbstractStatisticalTest):
 #                            One Sample Median Test                           #
 # --------------------------------------------------------------------------- #
 class MedianTest(AbstractStatisticalTest):
-    """Performs the One Sample Median Test."""
+    """Perform a Mood’s median test.
+
+    Test that two or more samples come from populations with the same median.
+
+    Let n = len(args) be the number of samples. The “grand median” of all the 
+    data is computed, and a contingency table is formed by classifying the 
+    values in each sample as being above or below the grand median. The 
+    contingency table, along with correction and lambda_, are passed to 
+    scipy.stats.chi2_contingency to compute the test statistic and p-value.
+
+    Attributes
+    ----------
+    statistic : float
+        The test statistic. The statistic that is returned is determined by 
+        lambda_. The default is Pearson’s chi-squared statistic.
+    p_value : float
+        The p-value of the test.
+    grand_median : float
+        The grand median.
+    contingency_table : ndarray
+        The contingency table. The shape of the table is (2, n), where 
+        n is the number of samples. The first row holds the counts of 
+        the values above the grand median, and the second row holds the 
+        counts of the values below the grand median. The table allows 
+        further analysis with, for example, scipy.stats.chi2_contingency, 
+        or with scipy.stats.fisher_exact if there are two samples, without 
+        having to recompute the table. If nan_policy is “propagate” and there 
+        are nans in the input, the return value for table is None.
+    """
 
     def __init__(self):
-        self._X2 = 0
-        self._p = 0        
+        super(MedianTest, self).__init__()   
         self._m = 0
         self._ctable = 0
 
-    def fit(self,*args, **kwargs):        
-         self._X2, self._p, self._m, self._ctable = median_test(*args, **kwargs)
+    def fit(self,*args, **kwargs):   
+        """Perform a Mood’s median test.
+
+        Parameters
+        ----------
+        sample1, sample2, … : array_like
+            The set of samples. There must be at least two samples. Each 
+            sample must be a one-dimensional sequence containing at least 
+            one value. The samples are not required to have the same length.
+        ties : str, optional
+            Determines how values equal to the grand median are classified 
+            in the contingency table. The string must be one of:
+            "below":
+                Values equal to the grand median are counted as "below".
+            "above":
+                Values equal to the grand median are counted as "above".
+            "ignore":
+                Values equal to the grand median are not counted.
+            The default is “below”.
+        correction : bool, optional
+            If True, and there are just two samples, apply Yates’ correction for 
+            continuity when computing the test statistic associated with the 
+            contingency table. Default is True.
+        lambda_ : float or str, optional
+            By default, the statistic computed in this test is Pearson’s 
+            chi-squared statistic. lambda_ allows a statistic from the 
+            Cressie-Read power divergence family to be used instead. 
+            See power_divergence for details. Default is 1 
+            (Pearson’s chi-squared statistic).
+        nan_policy : {‘propagate’, ‘raise’, ‘omit’}, optional
+            Defines how to handle when input contains nan. ‘propagate’ returns 
+            nan, ‘raise’ throws an error, ‘omit’ performs the calculations ignoring 
+            nan values. Default is ‘propagate’.        
+        """             
+        self._statistic, self._p, self._m, self._ctable = median_test(*args, **kwargs)
 
     def get_result(self):
-        return (self._X2, self._p)
+        """Returns results of a Mood’s median test.
+
+        Returns
+        ----------
+        stat : float
+            The test statistic. The statistic that is returned is determined by 
+            lambda_. The default is Pearson’s chi-squared statistic.
+        p : float
+            The p-value of the test.
+        m : float
+            The grand median.
+        table : ndarray
+            The contingency table. The shape of the table is (2, n), where 
+            n is the number of samples. The first row holds the counts of 
+            the values above the grand median, and the second row holds the 
+            counts of the values below the grand median. The table allows 
+            further analysis with, for example, scipy.stats.chi2_contingency, 
+            or with scipy.stats.fisher_exact if there are two samples, without 
+            having to recompute the table. If nan_policy is “propagate” and there 
+            are nans in the input, the return value for table is None.
+        """            
+        return self._statistic, self._p, self._m, self._ctable
 
     @property
-    def median_test(self):
-        return self._X2
-
-    @property
-    def p_value(self):
-        return self._p
-
-    @property
-    def grand_mean(self):
+    def grand_median(self):
         return self._m
 
     @property
@@ -165,7 +245,7 @@ class MedianTest(AbstractStatisticalTest):
         return self._ctable        
 
     def print(self):
-        result = {'X^2 statistic': [self._X2], 'p-value': [self._p],
+        result = {'Test Statistic': [self._statistic], 'p-value': [self._p],
                   'Grand Median': [self._m], 'Contingency Table': self._ctable}
         print(tabulate(result, headers='keys'))
 

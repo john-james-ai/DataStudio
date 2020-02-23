@@ -62,7 +62,6 @@ from datastudio.core.metadata import MetadataRemoteFactory
 from datastudio.core.metadata import MetadataRDBMSFactory
 from datastudio.core.metadata import MetadataFileFactory
 from datastudio.core.metadata import MetadataDataCollectionFactory
-from datastudio.core.metadata import MetadataDataSetFactory
 # =========================================================================== #
 #                              DATASET CLASSES                                #
 # =========================================================================== #
@@ -73,20 +72,10 @@ class AbstractDataSet(ABC):
     """Abstract base class for all DataSet classes."""
 
     def __init__(self, name, **kwargs):
-        self._name = name       
+        super(AbstractDataSet, self).__init__(name)        
         self._locked = False
         self._is_collection = False
-
-    @property
-    def name(self):
-        """Returns the name of the DataSet."""
-        return self._name
-
-    @name.setter
-    def name(self, value):
-        self._name = value
-        admin = next( v for k,v in self._metadata.items() if k.startswith('admin'))
-        admin.change('name', value)
+        self._data = pd.DataFrame
 
     @property
     def size(self):
@@ -142,16 +131,9 @@ class DataSet(AbstractDataSet):
     def __init__(self, name, datasource=None, datastore=None):
         super(DataSet, self).__init__(name, datasource=datasource, 
                                             datastore=datastore)
-        self._data = pd.DataFrame
-        self.metadata = self._build_metadata()
+        self._datasource = datasource
+        self._datastore = datastore
 
-    def _build_metadata(self):
-        factory = MetadataDataSetFactory(self, self._name)
-        factory.create_admin() 
-        factory.create_desc() 
-        factory.create_tech() 
-        factory.create_process() 
-        return factory.metadata
 
     @property
     def datasource(self):

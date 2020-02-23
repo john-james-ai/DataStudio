@@ -149,15 +149,18 @@ class TTestInd(AbstractStatisticalTest):
         self._statistic, self._p = ttest_ind(a,b, axis=axis, equal_var=equal_var)
 
     def get_result(self):
-        return self._statistic, self._p
+        """Calculate the T-test for the means of two independent samples of scores.
 
-    @property
-    def statistic(self):
-        return self._statistic
+        Returns
+        ----------
+        statistic : float or array
+            The calculated t-statistic.
 
-    @property
-    def p_value(self):
-        return self._p
+        pvalue: float or array
+            The two-tailed p-value.   
+    
+    """
+        return super(TTestInd, self).get_result()
 
     def print(self):
         result = {'t-statistic': [self._statistic], 'p-value': [self._p]}

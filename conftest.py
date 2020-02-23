@@ -22,6 +22,8 @@ import os
 
 import numpy as np
 from pytest import fixture
+import random
+import string
 
 from datastudio.core.data import DataStoreFile, DataSourceFile
 from datastudio.core.data import DataSet, DataCollection
@@ -145,6 +147,33 @@ def get_X_y():
     y = np.random.normal(10,size=(10))
     return x,y
 
+@fixture(scope='session')
+def get_dict():
+    """Returns a randomly generated dictionary."""
+    def rstring(length):
+            return ''.join(random.choices(string.ascii_uppercase +
+                                string.digits, k = length)) 
+    dict_len = 10
+    dictionary = {}
+    for i in range(dict_len):
+        key = rstring(random.randint(5,20)) 
+        dictionary[key] = rstring(random.randint(5,30)) 
+    return dictionary 
 
-
-    
+@fixture(scope='session')
+def get_dict_of_lists():
+    """Returns a randomly generated dictionary."""
+    def rstring(length):
+            return ''.join(random.choices(string.ascii_uppercase +
+                                string.digits, k = length)) 
+    dict_len = 5
+    dict_depth = 10
+    dictionary = {}
+    for i in range(dict_len):
+        key = rstring(random.randint(5,20)) 
+        values = []
+        for i in range(dict_depth):
+            value = rstring(random.randint(2,10))
+            values.append(value)
+        dictionary[key] = values
+    return dictionary 
