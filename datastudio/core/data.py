@@ -72,10 +72,19 @@ class AbstractDataSet(ABC):
     """Abstract base class for all DataSet classes."""
 
     def __init__(self, name, **kwargs):
-        super(AbstractDataSet, self).__init__(name)        
+        self._name = name
         self._locked = False
         self._is_collection = False
         self._data = pd.DataFrame
+        self.metadata = self._build_metadata(name, kwargs)
+
+    def _build_metadata(self, name, **kwargs):
+        factory = MetadataFileFactory(self, name, **kwargs)
+        factory.create_admin() 
+        factory.create_desc() 
+        factory.create_tech() 
+        factory.create_process() 
+        return factory.metadata              
 
     @property
     def size(self):
@@ -428,7 +437,7 @@ class AbstractDataStore(ABC):
         self._name = name        
         self._path = path        
         self._locked = False
-        self._is_collection = False
+        self._is_collection = False        
 
     @property
     def name(self):

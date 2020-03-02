@@ -23,7 +23,7 @@
 from abc import ABC, abstractmethod
 
 # --------------------------------------------------------------------------- #
-#                        AbstractStatisticalTest                              #
+#                           AbstractAnalysis                                  #
 # --------------------------------------------------------------------------- #
 class AbstractAnalysis(ABC):
 

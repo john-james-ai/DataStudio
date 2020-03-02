@@ -160,15 +160,6 @@ class Kurtosis(AbstractStatisticalTest):
     def kurtosis(self):
         return self._k
 
-    @property
-    def statistic(self):
-        return self._statistic
-
-    @property
-    def p_value(self):
-        return self._p
-
-
     def get_result(self):
         return self._k, self._statistic, self._p
 
@@ -213,17 +204,6 @@ class Bartlett(AbstractStatisticalTest):
             arrays of sample data. May be different lengths.
         """            
         self._statistic, self._p = bartlett(*args)
-
-    @property
-    def statistic(self):
-        return self._statistic
-
-    @property
-    def p_value(self):
-        return self._p
-
-    def get_result(self):
-        return self._k, self._statistic, self._p
 
     def print(self):
         result = {'T Statistic': [self._statistic], 'p_value' : [self._p]}

@@ -18,7 +18,7 @@
 # License : BSD                                                               #
 # Copyright (c) 2020 DecisionScients                                          #
 # =========================================================================== #
-"""Module defines the suite of statistical tests provided in DataStudio.
+"""Module defines the suite of statistical used to evaluate distributions.
 
 This package supports 32 statistical tests, organized around various facets of 
 statistical inference. The classes fall broadly into five groups:
@@ -91,7 +91,7 @@ Each of the classes above comply with an Abstract Base Class which defines
 the interface for all test classes. 
 
 """
-from scipy.stats import chisquare, binom_test, anderson
+from scipy.stats import chisquare, binom_test, anderson, zscore
 from statsmodels.stats.diagnostic import lilliefors
 from tabulate import tabulate
 
@@ -99,6 +99,54 @@ from datastudio.understanding.stat_tests.interface import AbstractStatisticalTes
 # =========================================================================== #
 #                           Distribution Tests                                #
 # =========================================================================== #
+# --------------------------------------------------------------------------- #
+#                                  Z Score                                    #
+# --------------------------------------------------------------------------- #
+class ZScore(AbstractStatisticalTest):
+    """Compute the z score.
+    
+    Compute the z score of each value in the sample, relative to the sample 
+    mean and standard deviation.
+
+    Parameters
+    ----------
+    a : array_like
+        An array like object containing the sample data.
+
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over 
+        the whole array a.
+
+    ddof ; int, optional
+        Degrees of freedom correction in the calculation of the standard deviation. 
+        Default is 0.
+
+    nan_policy : {‘propagate’, ‘raise’, ‘omit’}, optional
+        Defines how to handle when input contains nan. ‘propagate’ returns nan,
+        ‘raise’ throws an error, ‘omit’ performs the calculations ignoring nan 
+        values. Default is ‘propagate’.
+
+    Returns
+    -------
+    zscore : array_like
+        The z-scores, standardized by mean and standard deviation of input array a.
+
+    """
+
+    def __init__(self):
+        self._z = 0
+
+    def fit(self,a, axis=0, ddof=0, nan_policy='propagate'):        
+         self._z = zscore(a, axis=axis, ddof=ddof)
+
+    def get_result(self):
+        return self._z
+
+    def print(self):
+        result = {'Z Score': [self._z]}
+        print(tabulate(result, headers='keys'))
+
+
 # --------------------------------------------------------------------------- #
 #                            Binomial Test                                    #
 # --------------------------------------------------------------------------- #
